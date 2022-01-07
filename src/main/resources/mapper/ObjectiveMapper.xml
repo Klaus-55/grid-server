@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.galaxy.score.mapper.ObjectiveMapper">
+
+    <select id="getAllModels" resultType="java.util.Map">
+        SELECT
+            modelname,
+            zwname,
+            color
+        FROM
+            public.tb_model_detil_2021
+        GROUP BY
+            modelname,
+            zwname,
+            color
+    </select>
+
+    <!--各模式08, 20 晴雨准确率、强降水TS、强降水BIAS偏差幅度、降水量平均相对误差的查询计算-->
+    <select id="checkRainScore" resultType="java.util.Map">
+        SELECT wfsrc,wfhour,zwname,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sum(pc_na + pc_nd)*100.0/sum(total) END pc,
+        CASE WHEN sum(qjs_na + qjs_nb + qjs_nc) = 0 THEN NULL
+        ELSE sum(qjs_na)*1.0/sum(qjs_na + qjs_nb + qjs_nc) END ts,
+        CASE WHEN sum(qjs_na + qjs_nc) = 0 THEN NULL
+        ELSE abs(sum(qjs_na + qjs_nb)*1.0/sum(qjs_na + qjs_nc) - 1) END bi,
+        CASE WHEN sum(qjsffall) = 0 THEN NULL
+        ELSE sum(qjsmea)/sum(qjsffall) END me
+        FROM ${tableName} t1,(SELECT modelname,zwname FROM public.tb_model_detil_2021 GROUP BY modelname,zwname) t2
+        WHERE wfdatetime BETWEEN CAST(#{start} AS BIGINT) AND CAST(#{end} AS BIGINT)
+        <choose>
+            <when test="time != 'zh'">
+                AND substr(wfdatetime || '', 9, 2) = #{time}
+            </when>
+            <otherwise>
+                AND (substr(wfdatetime || '', 9, 2) = '20' OR substr(wfdatetime || '', 9, 2) = '08')
+            </otherwise>
+        </choose>
+
+        <if test="hour != null and hour != ''">
+            AND wfhour in
+            <foreach collection="hour.split(',')" item="item" open="(" separator="," close=")">
+                <if test="item != '0'">
+                    CAST(#{item} AS INTEGER)
+                </if>
+            </foreach>
+        </if>
+        AND wfinterval = CAST(#{interval} AS INTEGER)
+        <if test="type != '57687'">
+            AND type = #{type}
+        </if>
+        AND t1.wfsrc = t2.modelname
+        GROUP BY wfsrc, wfhour, zwname;
+    </select>
+
+    <select id="checkRainZh" resultType="java.util.Map">
+        SELECT wfsrc, zwname,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sum(pc_na + pc_nd) * 100.0 / sum(total) END pc,
+        CASE WHEN sum(qjs_na + qjs_nb + qjs_nc) = 0 THEN NULL
+        ELSE sum(qjs_na) * 1.0 / sum(qjs_na + qjs_nb + qjs_nc) END ts,
+        CASE WHEN sum(qjs_na + qjs_nc) = 0 THEN NULL
+        ELSE abs(sum(qjs_na + qjs_nb) * 1.0 / sum(qjs_na + qjs_nc) - 1) END bi,
+        CASE WHEN sum(qjsffall) = 0 THEN NULL
+        ELSE sum(qjsmea) / sum(qjsffall) END me
+        FROM ${tableName} t1,(SELECT modelname,zwname FROM public.tb_model_detil_2021 GROUP BY modelname,zwname) t2
+        WHERE wfdatetime BETWEEN CAST(#{start} AS BIGINT) AND CAST(#{end} AS BIGINT)
+        <choose>
+            <when test="time != 'zh'">
+                AND substr(wfdatetime || '', 9, 2) = #{time}
+            </when>
+            <otherwise>
+                AND (substr(wfdatetime || '', 9, 2) = '20' OR substr(wfdatetime || '', 9, 2) = '08')
+            </otherwise>
+        </choose>
+        <if test="type != '57687'">
+            AND type = #{type}
+        </if>
+        AND wfinterval = CAST(#{interval} AS INTEGER)
+        <if test="hour != null and hour != ''">
+            AND wfhour in
+            <foreach collection="hour.split(',')" item="item" open="(" separator="," close=")">
+                <if test="item != '0'">
+                    CAST(#{item} AS INTEGER)
+                </if>
+            </foreach>
+        </if>
+        AND t1.wfsrc = t2.modelname
+        GROUP BY wfsrc, zwname
+    </select>
+
+    <select id="checkTemScore" resultType="java.util.Map">
+        SELECT wfhour,wfsrc,zwname,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sqrt(sum(rmse_total)/sum(total)) END rmse,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sum(mae_total)/sum(total) END mae,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sum(ok2)*100.0/sum(total) END ok2,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sum(ok1)*100.0/sum(total) END ok1
+        FROM ${tableName} t1,(SELECT modelname,zwname FROM public.tb_model_detil_2021 GROUP BY modelname,zwname) t2
+        WHERE wfdatetime BETWEEN CAST(#{start} AS BIGINT) AND CAST(#{end} AS BIGINT)
+        <if test="time != 'zh'">
+            AND substr(wfdatetime || '', 9, 2) = #{time} 
+        </if>
+        <if test="hour != null and hour != ''">
+            AND wfhour in
+            <foreach collection="hour.split(',')" item="item" open="(" separator="," close=")">
+                CAST(#{item} AS INTEGER)
+            </foreach>
+        </if>
+        AND wfinterval = CAST(#{interval} AS INTEGER) AND facname = #{facname}
+        <if test="type != '57687'">
+            AND type = #{type}
+        </if>
+        AND t1.wfsrc = t2.modelname
+        GROUP BY wfsrc, wfhour, zwname
+    </select>
+
+    <select id="checkTemZh" resultType="java.util.Map">
+        SELECT wfsrc,zwname,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sqrt(sum(rmse_total)/sum(total)) END rmse,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sum(mae_total)/sum(total) END mae,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sum(ok2)*100.0/sum(total) END ok2,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sum(ok1)*100.0/sum(total) END ok1
+        FROM ${tableName} t1,(SELECT modelname,zwname FROM public.tb_model_detil_2021 GROUP BY modelname,zwname) t2
+        WHERE wfdatetime BETWEEN CAST(#{start} AS BIGINT) AND CAST(#{end} AS BIGINT)
+        <if test="time != 'zh'">
+            AND substr(wfdatetime || '', 9, 2) = #{time}
+        </if>
+        <if test="hour != null and hour != ''">
+            AND wfhour in
+            <foreach collection="hour.split(',')" item="item" open="(" separator="," close=")">
+                CAST(#{item} AS INTEGER)
+            </foreach>
+        </if>
+        AND wfinterval = CAST(#{interval} AS INTEGER) AND facname = #{facname}
+        <if test="type != '57687'">
+            AND type = #{type}
+        </if>
+        AND t1.wfsrc = t2.modelname
+        GROUP BY wfsrc, zwname
+    </select>
+
+    <select id="checkHeavyScore" resultType="java.util.Map">
+        SELECT wfsrc, wfhour,zwname,
+        CASE WHEN sum(na + nc) = 0 THEN NULL
+        ELSE sum(na)/sum(na + nc) END pod,
+        CASE WHEN sum(na + nb) = 0 THEN NULL
+        ELSE sum(nb)/sum(na + nb) END far
+        FROM ${tableName} t1,(SELECT modelname,zwname FROM public.tb_model_detil_2021 GROUP BY modelname,zwname) t2
+        WHERE wfdatetime BETWEEN CAST(#{start} AS BIGINT) AND CAST(#{end} AS BIGINT)
+        <if test="time != 'zh'">
+            AND substr(wfdatetime || '', 9, 2) = #{time}
+        </if>
+        <if test="hour != null and hour != ''">
+            AND wfhour in
+            <foreach collection="hour.split(',')" item="item" open="(" separator="," close=")">
+                CAST(#{item} AS INTEGER)
+            </foreach>
+        </if>
+        AND wfinterval = CAST(#{interval} AS INTEGER) AND facname = #{facname}
+        <if test="type != '57687'">
+            AND type = #{type}
+        </if>
+        AND t1.wfsrc = t2.modelname
+        GROUP BY wfsrc, wfhour, zwname
+    </select>
+
+    <select id="checkHeavyZh" resultType="java.util.Map">
+        SELECT wfsrc,zwname,
+        CASE WHEN sum(na + nc) = 0 THEN NULL
+        ELSE sum(na)/sum(na + nc) END pod,
+        CASE WHEN sum(na + nb) = 0 THEN NULL
+        ELSE sum(nb)/sum(na + nb) END far
+        FROM ${tableName} t1,(SELECT modelname,zwname FROM public.tb_model_detil_2021 GROUP BY modelname,zwname) t2
+        WHERE wfdatetime BETWEEN CAST(#{start} AS BIGINT) AND CAST(#{end} AS BIGINT)
+        <if test="time != 'zh'">
+            AND substr(wfdatetime || '', 9, 2) = #{time}
+        </if>
+        <if test="hour != null and hour != ''">
+            AND wfhour in
+            <foreach collection="hour.split(',')" item="item" open="(" separator="," close=")">
+                CAST(#{item} AS INTEGER)
+            </foreach>
+        </if>
+        AND wfinterval = CAST(#{interval} AS INTEGER) AND facname = #{facname}
+        <if test="type != '57687'">
+            AND type = #{type}
+        </if>
+        AND t1.wfsrc = t2.modelname
+        GROUP BY wfsrc, zwname
+    </select>
+
+    <!--逐日检验-->
+    <select id="checkRainDayByDay" resultType="java.util.Map">
+        SELECT substr(wfdatetime || '', 1, 8) wfdatetime,wfsrc,zwname,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sum(pc_na + pc_nd)*100.0/sum(total) END pc,
+        CASE WHEN sum(qjs_na + qjs_nb + qjs_nc) = 0 THEN NULL
+        ELSE sum(qjs_na)*1.0/sum(qjs_na + qjs_nb + qjs_nc) END ts,
+        CASE WHEN sum(qjs_na + qjs_nc) = 0 THEN NULL
+        ELSE abs(sum(qjs_na + qjs_nb)*1.0/sum(qjs_na + qjs_nc) - 1) END bi,
+        CASE WHEN sum(qjsffall) = 0 THEN NULL
+        ELSE sum(qjsmea)/sum(qjsffall) END me
+        FROM ${tableName} t1,(SELECT modelname,zwname FROM public.tb_model_detil_2021 GROUP BY modelname,zwname) t2
+        WHERE wfdatetime BETWEEN CAST(#{start} AS BIGINT) AND CAST(#{end} AS BIGINT)
+        <if test="time != 'zh'">
+            AND substr(wfdatetime || '', 9, 2) = #{time}
+        </if>
+        AND wfinterval = CAST(#{interval} AS INTEGER)
+        <if test="type != '57687'">
+            AND type = #{type}
+        </if>
+        AND t1.wfsrc = t2.modelname
+        GROUP BY substr(wfdatetime || '', 1, 8), wfsrc, zwname
+        ORDER BY substr(wfdatetime || '', 1, 8);
+    </select>
+
+    <select id="checkTemDayByDay" resultType="java.util.Map">
+        SELECT substr(wfdatetime || '', 1, 8) wfdatetime,wfsrc,zwname,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sqrt(sum(rmse_total)/sum(total)) END rmse,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sum(mae_total)/sum(total) END mae,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sum(ok2)*100.0/sum(total) END ok2,
+        CASE WHEN sum(total) = 0 THEN NULL
+        ELSE sum(ok1)*100.0/sum(total) END ok1
+        FROM ${tableName} t1,(SELECT modelname,zwname FROM public.tb_model_detil_2021 GROUP BY modelname,zwname) t2
+        WHERE wfdatetime BETWEEN CAST(#{start} AS BIGINT) AND CAST(#{end} AS BIGINT)
+        <if test="time != 'zh'">
+            AND substr(wfdatetime || '', 9, 2) = #{time}
+        </if>
+        AND wfinterval = CAST(#{interval} AS INTEGER) AND facname = #{facname}
+        <if test="type != '57687'">
+            AND type = #{type}
+        </if>
+        AND t1.wfsrc = t2.modelname
+        GROUP BY substr(wfdatetime || '', 1, 8), wfsrc, zwname
+        ORDER BY wfdatetime
+    </select>
+
+    <select id="checkHeavyDayByDay" resultType="java.util.Map">
+        SELECT substr(wfdatetime || '', 1, 8) wfdatetime, wfsrc, zwname,
+        CASE WHEN sum(na + nc) = 0 THEN NULL
+        ELSE sum(na)/sum(na + nc) END pod,
+        CASE WHEN sum(na + nb) = 0 THEN NULL
+        ELSE sum(nb)/sum(na + nb) END far
+        FROM ${tableName} t1,(SELECT modelname,zwname FROM public.tb_model_detil_2021 GROUP BY modelname,zwname) t2
+        WHERE wfdatetime BETWEEN CAST(#{start} AS BIGINT) AND CAST(#{end} AS BIGINT)
+        <if test="time != 'zh'">
+            AND substr(wfdatetime || '', 9, 2) = #{time}
+        </if>
+        AND wfinterval = CAST(#{interval} AS INTEGER) AND facname = #{facname}
+        <if test="type != '57687'">
+            AND type = #{type}
+        </if>
+        AND t1.wfsrc = t2.modelname
+        GROUP BY substr(wfdatetime || '', 1, 8), wfsrc, zwname
+        ORDER BY wfdatetime
+    </select>
+
+    <select id="foreAndLiveMonitor" resultType="map">
+        SELECT
+        CASE
+            WHEN
+                t2.zwname IS NULL THEN
+                    t1.wfsrc ELSE t2.zwname
+                END unit,
+            substr(t1.wfdatetime || '', 1, 10) wfdatetime,
+            t1.facname,
+            t1.filecount
+        FROM
+            (
+            SELECT
+                wfsrc,
+                wfdatetime,
+                facname,
+                COUNT (1) filecount
+            FROM
+                wf.${tableName}
+            WHERE
+                facname in
+                <foreach collection="facname.split(',')" open="(" separator="," close=")" item="item">
+                    #{item}
+                </foreach>
+                AND wfdatetime BETWEEN CAST(#{start} AS BIGINT)
+                AND CAST(#{end} AS BIGINT)
+            GROUP BY
+                wfsrc,
+                wfdatetime,
+                facname
+            ) t1
+            LEFT JOIN ( SELECT modelname, zwname FROM PUBLIC.tb_model_detil_2021 GROUP BY modelname, zwname ) t2 ON t1.wfsrc = t2.modelname
+    </select>
+
+    <select id="getObtHourCount" resultType="java.util.Map">
+        SELECT
+            to_char(ddatetime, 'YYYY-MM-DD HH24:MI') ddatetime,
+            COUNT (1) obthour
+        FROM
+            public.tb_need_hours
+        WHERE
+            ddatetime between #{start}
+            AND #{end}
+        GROUP BY
+            ddatetime
+    </select>
+
+    <select id="getGridHourCount" resultType="java.util.Map">
+        SELECT
+            to_char( to_timestamp( ddatetime || '', 'YYYYMMDDHH24' ), 'YYYY-MM-DD HH24:MI' ) ddatetime,
+            COUNT(1) gridhour
+        FROM
+            live.tb_grib_hourd
+        WHERE
+            ddatetime BETWEEN CAST(#{start} AS BIGINT)
+            AND CAST(#{end} AS BIGINT)
+            AND facname IN
+            <foreach collection="facname.split(',')" open="(" separator="," close=")" item="item">
+                #{item}
+            </foreach>
+        GROUP BY
+            ddatetime
+    </select>
+
+    <select id="getGridDayCount" resultType="java.util.Map">
+        SELECT
+            to_char( to_timestamp( ddatetime || '', 'YYYYMMDDHH24' ), 'YYYY-MM-DD HH24:MI' ) ddatetime,
+            COUNT(1) gridday
+        FROM
+          live.tb_grib_dayd
+        WHERE
+            ddatetime BETWEEN CAST(#{start} AS BIGINT)
+            AND CAST(#{end} AS BIGINT)
+            AND facname IN
+            <foreach collection="facname.split(',')" open="(" separator="," close=")" item="item">
+                #{item}
+            </foreach>
+        GROUP BY
+          ddatetime
+    </select>
+</mapper>

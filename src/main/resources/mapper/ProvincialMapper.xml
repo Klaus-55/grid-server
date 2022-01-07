@@ -1,0 +1,2386 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.galaxy.score.mapper.ProvincialMapper">
+
+    <select id="getChiefForecasters" resultType="java.util.Map">
+        SELECT
+            creator forecaster,
+            workday || fstime wfdatetime
+        FROM
+            tb_bakki
+        WHERE
+            datatype = '1'
+            AND workday BETWEEN #{start}
+            AND #{end}
+        GROUP BY
+            creator,
+            workday,
+            fstime
+        ORDER BY forecaster
+    </select>
+
+    <select id="getWarningMessage" resultType="java.lang.Double">
+        SELECT
+            round(sum(ts * typeweights) / sum(typeweights), 2) zh
+        FROM
+        (
+            SELECT
+                forecaster,
+                warntype,
+                sum(ts * levelweights) / sum(levelweights) ts,
+                CASE WHEN warntype = '暴雨' THEN 1.5
+                WHEN warntype = '高温' THEN 0.8
+                WHEN warntype = '霾' THEN 0.2
+                ELSE 1 END typeweights
+            FROM
+            (
+                SELECT
+                    forecaster,
+                    warntype,
+                    `level`,
+                    CASE WHEN na + nb + nc = 0 THEN NULL
+                    ELSE ROUND( na * 100 /( na + nb + nc ), 2 ) END ts,
+                    CASE WHEN `level` = '红色' THEN 1.5
+                    WHEN `level` = '橙色' THEN 0.9
+                    WHEN `level` = '黄色' THEN 0.5
+                    WHEN `level` = '蓝色' THEN 0.3 END levelweights
+                FROM
+                    (
+                        SELECT
+                            sc.forecaster,
+                            sc.warntype,
+                            sc.`testlevel` `level`,
+                            sum( CASE WHEN sc.graded = 'NA' THEN 1 ELSE 0 END ) na,
+                            sum( CASE WHEN sc.graded = 'NB' THEN 1 ELSE 0 END ) nb,
+                            sum( CASE WHEN sc.graded = 'NC' THEN 1 ELSE 0 END ) nc
+                        FROM
+                            tb_smpf_disasterwarningscore_cimiss sc
+                        WHERE
+                            sc.checkdate BETWEEN #{start}
+							AND #{end}
+                            AND forecaster = #{forecaster}
+                        GROUP BY
+                            forecaster,
+                            sc.warntype,
+                            sc.`testlevel`
+                    ) rs
+            ) t1 GROUP BY forecaster, warntype
+        ) t1 GROUP BY forecaster
+    </select>
+
+    <select id="getWeatherPublic" resultType="java.util.Map">
+        SELECT
+            CASE
+                WHEN SUM ( total ) = 0 THEN
+                NULL ELSE SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total )
+            END qyzql,
+            CASE
+                WHEN SUM ( total - pc_nd ) = 0 THEN
+                NULL ELSE SUM ( pc_na ) * 100.0 / SUM ( total - pc_nd )
+            END qyts,
+            CASE
+                WHEN SUM ( ybx1_na + ybx1_nb + ybx1_nc ) = 0 THEN
+                NULL ELSE SUM ( ybx1_na ) * 100.0 / SUM ( ybx1_na + ybx1_nb + ybx1_nc )
+            END genzql,
+            CASE
+                WHEN SUM ( ybx2_na + ybx2_nb + ybx2_nc ) = 0 THEN
+                NULL ELSE SUM ( ybx2_na ) * 100.0 / SUM ( ybx2_na + ybx2_nb + ybx2_nc )
+            END stormzql,
+            CASE
+                WHEN SUM ( fj1_na + fj1_nb + fj1_nc ) = 0 THEN
+                NULL ELSE SUM ( fj1_na ) * 100.0 / SUM ( fj1_na + fj1_nb + fj1_nc )
+            END fj1zql,
+            CASE
+                WHEN SUM ( fj2_na + fj2_nb + fj2_nc ) = 0 THEN
+                NULL ELSE SUM ( fj2_na ) * 100.0 / SUM ( fj2_na + fj2_nb + fj2_nc )
+            END fj2zql,
+            CASE
+                WHEN SUM ( fj3_na + fj3_nb + fj3_nc ) = 0 THEN
+                NULL ELSE SUM ( fj3_na ) * 100.0 / SUM ( fj3_na + fj3_nb + fj3_nc )
+            END fj3zql,
+            CASE
+                WHEN SUM ( fj4_na + fj4_nb + fj4_nc ) = 0 THEN
+                NULL ELSE SUM ( fj4_na ) * 100.0 / SUM ( fj4_na + fj4_nb + fj4_nc )
+            END fj4zql,
+            CASE
+                WHEN SUM ( fj5_na + fj5_nb + fj5_nc ) = 0 THEN
+                NULL ELSE SUM ( fj5_na ) * 100.0 / SUM ( fj5_na + fj5_nb + fj5_nc )
+            END fj5zql,
+            CASE
+                WHEN SUM ( fj6_na + fj6_nb + fj6_nc ) = 0 THEN
+                NULL ELSE SUM ( fj6_na ) * 100.0 / SUM ( fj6_na + fj6_nb + fj6_nc )
+            END fj6zql,
+            CASE
+                WHEN SUM ( lj1_na + lj1_nb + lj1_nc ) = 0 THEN
+                NULL ELSE SUM ( lj1_na ) * 100.0 / SUM ( lj1_na + lj1_nb + lj1_nc )
+            END ljo1zql,
+            CASE
+                WHEN SUM ( lj2_na + lj2_nb + lj2_nc ) = 0 THEN
+                NULL ELSE SUM ( lj2_na ) * 100.0 / SUM ( lj2_na + lj2_nb + lj2_nc )
+            END ljo2zql,
+            CASE
+                WHEN SUM ( lj3_na + lj3_nb + lj3_nc ) = 0 THEN
+                NULL ELSE SUM ( lj3_na ) * 100.0 / SUM ( lj3_na + lj3_nb + lj3_nc )
+            END ljo3zql,
+            CASE
+                WHEN SUM ( lj4_na + lj4_nb + lj4_nc ) = 0 THEN
+                NULL ELSE SUM ( lj4_na ) * 100.0 / SUM ( lj4_na + lj4_nb + lj4_nc )
+            END ljo4zql,
+            CASE
+                WHEN SUM ( lj5_na + lj5_nb + lj5_nc ) = 0 THEN
+                NULL ELSE SUM ( lj5_na ) * 100.0 / SUM ( lj5_na + lj5_nb + lj5_nc )
+            END ljo5zql,
+            CASE
+                WHEN SUM ( lj6_na + lj6_nb + lj6_nc ) = 0 THEN
+                NULL ELSE SUM ( lj6_na ) * 100.0 / SUM ( lj6_na + lj6_nb + lj6_nc )
+            END ljo6zql
+        FROM
+            public_shouxi.tb_score_day_pre
+        WHERE wfdatetime IN
+        <foreach collection="time.split(',')" item="item" open="(" separator="," close=")">
+            CAST(#{item} AS BIGINT)
+        </foreach>
+    </select>
+
+    <select id="getRainProgress" resultType="java.lang.Double">
+        SELECT
+            ROUND( na * 100 /( na + nb + nc ), 2 ) zh
+        FROM
+            (
+                SELECT
+                    forecaster,
+                    SUM( CASE WHEN sc.rain = 'NA' THEN 1 ELSE 0 END ) NA,
+                    SUM( CASE WHEN sc.rain = 'NB' THEN 1 ELSE 0 END ) NB,
+                    SUM( CASE WHEN sc.rain = 'NC' THEN 1 ELSE 0 END ) NC
+                FROM
+                    tb_smpf_forecastrainprocessindex idx,
+                    tb_smpf_rainprocessscore sc
+                WHERE
+                    date_format(idx.START, '%Y%m%d%H%i') BETWEEN concat(#{start}, '0000')
+					AND concat(#{end}, '2359')
+                    AND sc.processIndexKeyid = idx.keyid
+                    AND forecaster = #{forecaster}
+            ) rs;
+    </select>
+
+    <select id="getForemanScore" resultType="java.util.Map">
+        SELECT
+		    t1.*
+        FROM
+        (SELECT
+                t1.*,
+                t2.maxt,
+                t2.tmaxmae,
+                t3.mint,
+                t3.tminmae
+        FROM (SELECT
+                forecaster,
+                CASE
+                        WHEN SUM ( total ) = 0 THEN
+                        NULL ELSE SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total )
+                END qyzql,
+                CASE
+                    WHEN SUM ( total - pc_nd ) = 0 THEN
+                    NULL ELSE SUM ( pc_na ) * 100.0 / SUM ( total - pc_nd )
+                END qyts,
+                CASE
+                    WHEN SUM ( ybx1_na + ybx1_nb + ybx1_nc ) = 0 THEN
+                    NULL ELSE SUM ( ybx1_na ) * 100.0 / SUM ( ybx1_na + ybx1_nb + ybx1_nc )
+                END genzql,
+                CASE
+                    WHEN SUM ( ybx2_na + ybx2_nb + ybx2_nc ) = 0 THEN
+                    NULL ELSE SUM ( ybx2_na ) * 100.0 / SUM ( ybx2_na + ybx2_nb + ybx2_nc )
+                END stormzql,
+                CASE
+                    WHEN SUM ( fj1_na + fj1_nb + fj1_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj1_na ) * 100.0 / SUM ( fj1_na + fj1_nb + fj1_nc )
+                END fj1zql,
+                CASE
+                    WHEN SUM ( fj2_na + fj2_nb + fj2_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj2_na ) * 100.0 / SUM ( fj2_na + fj2_nb + fj2_nc )
+                END fj2zql,
+                CASE
+                    WHEN SUM ( fj3_na + fj3_nb + fj3_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj3_na ) * 100.0 / SUM ( fj3_na + fj3_nb + fj3_nc )
+                END fj3zql,
+                CASE
+                    WHEN SUM ( fj4_na + fj4_nb + fj4_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj4_na ) * 100.0 / SUM ( fj4_na + fj4_nb + fj4_nc )
+                END fj4zql,
+                CASE
+                    WHEN SUM ( fj5_na + fj5_nb + fj5_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj5_na ) * 100.0 / SUM ( fj5_na + fj5_nb + fj5_nc )
+                END fj5zql,
+                CASE
+                    WHEN SUM ( fj6_na + fj6_nb + fj6_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj6_na ) * 100.0 / SUM ( fj6_na + fj6_nb + fj6_nc )
+                END fj6zql,
+                CASE
+                    WHEN SUM ( lj1_na + lj1_nb + lj1_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj1_na ) * 100.0 / SUM ( lj1_na + lj1_nb + lj1_nc )
+                END ljo1zql,
+                CASE
+                    WHEN SUM ( lj2_na + lj2_nb + lj2_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj2_na ) * 100.0 / SUM ( lj2_na + lj2_nb + lj2_nc )
+                END ljo2zql,
+                CASE
+                    WHEN SUM ( lj3_na + lj3_nb + lj3_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj3_na ) * 100.0 / SUM ( lj3_na + lj3_nb + lj3_nc )
+                END ljo3zql,
+                CASE
+                    WHEN SUM ( lj4_na + lj4_nb + lj4_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj4_na ) * 100.0 / SUM ( lj4_na + lj4_nb + lj4_nc )
+                END ljo4zql,
+                CASE
+                    WHEN SUM ( lj5_na + lj5_nb + lj5_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj5_na ) * 100.0 / SUM ( lj5_na + lj5_nb + lj5_nc )
+                END ljo5zql,
+                CASE
+                    WHEN SUM ( lj6_na + lj6_nb + lj6_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj6_na ) * 100.0 / SUM ( lj6_na + lj6_nb + lj6_nc )
+                END ljo6zql
+        FROM
+        (
+                SELECT
+                        creator forecaster,
+                        CAST ( workday || fstime AS BIGINT ) wfdatetime
+                FROM
+                        PUBLIC.tb_bakki
+                WHERE
+                        workday BETWEEN #{start}
+                        AND #{end}
+                        AND fstime = '2000'
+                        AND datatype = '0'
+                GROUP BY
+                        creator,
+                        workday,
+                        fstime
+                ORDER BY
+                        creator
+        ) t1 LEFT JOIN tb_score_day_pre t2 ON
+                t1.wfdatetime = t2.wfdatetime
+                AND t2.wfhour IN (60, 72)
+                AND t2."type" = 'S1912'
+        GROUP BY forecaster) t1
+        FULL JOIN
+        (SELECT
+                forecaster,
+                CASE WHEN sum(total) = 0 THEN NULL ELSE
+                round(sum(ok2) * 100.0 / sum(total), 1) END maxt,
+                sum(mae_total) / sum(total) tmaxmae
+        FROM
+        (
+                SELECT
+                        creator forecaster,
+                        CAST ( workday || fstime AS BIGINT ) wfdatetime
+                FROM
+                        PUBLIC.tb_bakki
+                WHERE
+                        workday BETWEEN #{start}
+                        AND #{end}
+                        AND fstime = '2000'
+                        AND datatype = '0'
+                GROUP BY
+                        creator,
+                        workday,
+                        fstime
+                ORDER BY
+                        creator
+        ) t1 LEFT JOIN tb_score_day_tem t2 ON
+                t1.wfdatetime = t2.wfdatetime
+                AND t2.wfhour IN (60, 72)
+                AND t2."type" = 'S1912'
+                AND t2.facname = 'TMAX'
+        GROUP BY forecaster) t2
+        ON t1.forecaster = t2.forecaster
+        FULL JOIN
+        (SELECT
+                forecaster,
+                CASE WHEN sum(total) = 0 THEN NULL ELSE
+                round(sum(ok2) * 100.0 / sum(total), 1) END mint,
+                sum(mae_total) / sum(total) tminmae
+        FROM
+        (
+                SELECT
+                        creator forecaster,
+                        CAST ( workday || fstime AS BIGINT ) wfdatetime
+                FROM
+                        PUBLIC.tb_bakki
+                WHERE
+                        workday BETWEEN #{start}
+                        AND #{end}
+                        AND fstime = '2000'
+                        AND datatype = '0'
+                GROUP BY
+                        creator,
+                        workday,
+                        fstime
+                ORDER BY
+                        creator
+        ) t1 LEFT JOIN tb_score_day_tem t2 ON
+                t1.wfdatetime = t2.wfdatetime
+                AND t2.wfhour IN (60, 72)
+                AND t2."type" = 'S1912'
+                AND t2.facname = 'TMIN'
+        GROUP BY forecaster) t3 ON
+        t2.forecaster = t3.forecaster) t1
+    </select>
+
+    <select id="getForemanScoreYt" resultType="java.util.Map">
+        SELECT
+            t1.*
+        FROM
+        (SELECT
+                t1.*,
+                t2.maxt,
+                t2.tmaxmae,
+                t3.mint,
+                t3.tminmae
+        FROM (SELECT
+                forecaster,
+                CASE
+                        WHEN SUM ( total ) = 0 THEN
+                        NULL ELSE SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total )
+                END qyzql,
+                CASE
+                    WHEN SUM ( total - pc_nd ) = 0 THEN
+                    NULL ELSE SUM ( pc_na ) * 100.0 / SUM ( total - pc_nd )
+                END qyts,
+                CASE
+                    WHEN SUM ( ybx1_na + ybx1_nb + ybx1_nc ) = 0 THEN
+                    NULL ELSE SUM ( ybx1_na ) * 100.0 / SUM ( ybx1_na + ybx1_nb + ybx1_nc )
+                END genzql,
+                CASE
+                    WHEN SUM ( ybx2_na + ybx2_nb + ybx2_nc ) = 0 THEN
+                    NULL ELSE SUM ( ybx2_na ) * 100.0 / SUM ( ybx2_na + ybx2_nb + ybx2_nc )
+                END stormzql,
+                CASE
+                    WHEN SUM ( fj1_na + fj1_nb + fj1_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj1_na ) * 100.0 / SUM ( fj1_na + fj1_nb + fj1_nc )
+                END fj1zql,
+                CASE
+                    WHEN SUM ( fj2_na + fj2_nb + fj2_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj2_na ) * 100.0 / SUM ( fj2_na + fj2_nb + fj2_nc )
+                END fj2zql,
+                CASE
+                    WHEN SUM ( fj3_na + fj3_nb + fj3_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj3_na ) * 100.0 / SUM ( fj3_na + fj3_nb + fj3_nc )
+                END fj3zql,
+                CASE
+                    WHEN SUM ( fj4_na + fj4_nb + fj4_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj4_na ) * 100.0 / SUM ( fj4_na + fj4_nb + fj4_nc )
+                END fj4zql,
+                CASE
+                    WHEN SUM ( fj5_na + fj5_nb + fj5_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj5_na ) * 100.0 / SUM ( fj5_na + fj5_nb + fj5_nc )
+                END fj5zql,
+                CASE
+                    WHEN SUM ( fj6_na + fj6_nb + fj6_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj6_na ) * 100.0 / SUM ( fj6_na + fj6_nb + fj6_nc )
+                END fj6zql,
+                CASE
+                    WHEN SUM ( lj1_na + lj1_nb + lj1_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj1_na ) * 100.0 / SUM ( lj1_na + lj1_nb + lj1_nc )
+                END ljo1zql,
+                CASE
+                    WHEN SUM ( lj2_na + lj2_nb + lj2_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj2_na ) * 100.0 / SUM ( lj2_na + lj2_nb + lj2_nc )
+                END ljo2zql,
+                CASE
+                    WHEN SUM ( lj3_na + lj3_nb + lj3_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj3_na ) * 100.0 / SUM ( lj3_na + lj3_nb + lj3_nc )
+                END ljo3zql,
+                CASE
+                    WHEN SUM ( lj4_na + lj4_nb + lj4_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj4_na ) * 100.0 / SUM ( lj4_na + lj4_nb + lj4_nc )
+                END ljo4zql,
+                CASE
+                    WHEN SUM ( lj5_na + lj5_nb + lj5_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj5_na ) * 100.0 / SUM ( lj5_na + lj5_nb + lj5_nc )
+                END ljo5zql,
+                CASE
+                    WHEN SUM ( lj6_na + lj6_nb + lj6_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj6_na ) * 100.0 / SUM ( lj6_na + lj6_nb + lj6_nc )
+                END ljo6zql
+        FROM
+        (
+                SELECT
+                        creator forecaster,
+                        CAST ( workday || fstime AS BIGINT ) wfdatetime
+                FROM
+                        PUBLIC.tb_bakki
+                WHERE
+                        workday BETWEEN #{start}
+                        AND #{end}
+                        AND fstime = '2000'
+                        AND datatype = '0'
+                GROUP BY
+                        creator,
+                        workday,
+                        fstime
+                ORDER BY
+                        creator
+        ) t1 LEFT JOIN tb_score_day_pre_yt t2 ON
+                t1.wfdatetime = t2.wfdatetime
+                AND t2.wfhour IN (60, 72)
+                AND t2."type" = 'S1912'
+        GROUP BY forecaster) t1
+        FULL JOIN
+        (SELECT
+                forecaster,
+                CASE WHEN sum(total) = 0 THEN NULL ELSE
+                round(sum(ok2) * 100.0 / sum(total), 1) END maxt,
+                sum(mae_total) / sum(total) tmaxmae
+        FROM
+        (
+                SELECT
+                        creator forecaster,
+                        CAST ( workday || fstime AS BIGINT ) wfdatetime
+                FROM
+                        PUBLIC.tb_bakki
+                WHERE
+                        workday BETWEEN #{start}
+                        AND #{end}
+                        AND fstime = '2000'
+                        AND datatype = '0'
+                GROUP BY
+                        creator,
+                        workday,
+                        fstime
+                ORDER BY
+                        creator
+        ) t1 LEFT JOIN tb_score_day_tem_yt t2 ON
+                t1.wfdatetime = t2.wfdatetime
+                AND t2.wfhour IN (60, 72)
+                AND t2."type" = 'S1912'
+                AND t2.facname = 'TMAX'
+        GROUP BY forecaster) t2
+        ON t1.forecaster = t2.forecaster
+        FULL JOIN
+        (SELECT
+                forecaster,
+                CASE WHEN sum(total) = 0 THEN NULL ELSE
+                round(sum(ok2) * 100.0 / sum(total), 1) END mint,
+                sum(mae_total) / sum(total) tminmae
+        FROM
+        (
+                SELECT
+                        creator forecaster,
+                        CAST ( workday || fstime AS BIGINT ) wfdatetime
+                FROM
+                        PUBLIC.tb_bakki
+                WHERE
+                        workday BETWEEN #{start}
+                        AND #{end}
+                        AND fstime = '2000'
+                        AND datatype = '0'
+                GROUP BY
+                        creator,
+                        workday,
+                        fstime
+                ORDER BY
+                        creator
+        ) t1 LEFT JOIN tb_score_day_tem_yt t2 ON
+                t1.wfdatetime = t2.wfdatetime
+                AND t2.wfhour IN (60, 72)
+                AND t2."type" = 'S1912'
+                AND t2.facname = 'TMIN'
+        GROUP BY forecaster) t3 ON
+        t2.forecaster = t3.forecaster) t1
+    </select>
+
+    <select id="getNightShiftScore" resultType="java.util.Map">
+        SELECT
+		    t1.*
+        FROM
+        (SELECT
+                t1.*,
+                t2.maxt,
+                t2.tmaxmae,
+                t3.mint,
+                t3.tminmae
+        FROM (SELECT
+                forecaster,
+                CASE
+                        WHEN SUM ( total ) = 0 THEN
+                        NULL ELSE SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total )
+                END qyzql,
+                CASE
+                    WHEN SUM ( total - pc_nd ) = 0 THEN
+                    NULL ELSE SUM ( pc_na ) * 100.0 / SUM ( total - pc_nd )
+                END qyts,
+                CASE
+                    WHEN SUM ( ybx1_na + ybx1_nb + ybx1_nc ) = 0 THEN
+                    NULL ELSE SUM ( ybx1_na ) * 100.0 / SUM ( ybx1_na + ybx1_nb + ybx1_nc )
+                END genzql,
+                CASE
+                    WHEN SUM ( ybx2_na + ybx2_nb + ybx2_nc ) = 0 THEN
+                    NULL ELSE SUM ( ybx2_na ) * 100.0 / SUM ( ybx2_na + ybx2_nb + ybx2_nc )
+                END stormzql,
+                CASE
+                    WHEN SUM ( fj1_na + fj1_nb + fj1_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj1_na ) * 100.0 / SUM ( fj1_na + fj1_nb + fj1_nc )
+                END fj1zql,
+                CASE
+                    WHEN SUM ( fj2_na + fj2_nb + fj2_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj2_na ) * 100.0 / SUM ( fj2_na + fj2_nb + fj2_nc )
+                END fj2zql,
+                CASE
+                    WHEN SUM ( fj3_na + fj3_nb + fj3_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj3_na ) * 100.0 / SUM ( fj3_na + fj3_nb + fj3_nc )
+                END fj3zql,
+                CASE
+                    WHEN SUM ( fj4_na + fj4_nb + fj4_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj4_na ) * 100.0 / SUM ( fj4_na + fj4_nb + fj4_nc )
+                END fj4zql,
+                CASE
+                    WHEN SUM ( fj5_na + fj5_nb + fj5_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj5_na ) * 100.0 / SUM ( fj5_na + fj5_nb + fj5_nc )
+                END fj5zql,
+                CASE
+                    WHEN SUM ( fj6_na + fj6_nb + fj6_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj6_na ) * 100.0 / SUM ( fj6_na + fj6_nb + fj6_nc )
+                END fj6zql,
+                CASE
+                    WHEN SUM ( lj1_na + lj1_nb + lj1_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj1_na ) * 100.0 / SUM ( lj1_na + lj1_nb + lj1_nc )
+                END ljo1zql,
+                CASE
+                    WHEN SUM ( lj2_na + lj2_nb + lj2_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj2_na ) * 100.0 / SUM ( lj2_na + lj2_nb + lj2_nc )
+                END ljo2zql,
+                CASE
+                    WHEN SUM ( lj3_na + lj3_nb + lj3_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj3_na ) * 100.0 / SUM ( lj3_na + lj3_nb + lj3_nc )
+                END ljo3zql,
+                CASE
+                    WHEN SUM ( lj4_na + lj4_nb + lj4_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj4_na ) * 100.0 / SUM ( lj4_na + lj4_nb + lj4_nc )
+                END ljo4zql,
+                CASE
+                    WHEN SUM ( lj5_na + lj5_nb + lj5_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj5_na ) * 100.0 / SUM ( lj5_na + lj5_nb + lj5_nc )
+                END ljo5zql,
+                CASE
+                    WHEN SUM ( lj6_na + lj6_nb + lj6_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj6_na ) * 100.0 / SUM ( lj6_na + lj6_nb + lj6_nc )
+                END ljo6zql
+        FROM
+        (
+                SELECT
+                        creator forecaster,
+                        CAST ( workday || fstime AS BIGINT ) wfdatetime
+                FROM
+                        PUBLIC.tb_bakki
+                WHERE
+                        workday BETWEEN #{start}
+                        AND #{end}
+                        AND fstime = '0800'
+                        AND datatype = '0'
+                GROUP BY
+                        creator,
+                        workday,
+                        fstime
+                ORDER BY
+                        creator
+        ) t1 LEFT JOIN tb_score_day_pre t2 ON
+                t1.wfdatetime = t2.wfdatetime
+                AND t2.wfhour IN (60, 72)
+                AND t2."type" = 'S1912'
+        GROUP BY forecaster) t1
+        FULL JOIN
+        (SELECT
+                forecaster,
+                CASE WHEN sum(total) = 0 THEN NULL ELSE
+                round(sum(ok2) * 100.0 / sum(total), 1) END maxt,
+                sum(mae_total) / sum(total) tmaxmae
+        FROM
+        (
+                SELECT
+                        creator forecaster,
+                        CAST ( workday || fstime AS BIGINT ) wfdatetime
+                FROM
+                        PUBLIC.tb_bakki
+                WHERE
+                        workday BETWEEN #{start}
+                        AND #{end}
+                        AND fstime = '0800'
+                        AND datatype = '0'
+                GROUP BY
+                        creator,
+                        workday,
+                        fstime
+                ORDER BY
+                        creator
+        ) t1 LEFT JOIN tb_score_day_tem t2 ON
+                t1.wfdatetime = t2.wfdatetime
+                AND t2.wfhour IN (60, 72)
+                AND t2."type" = 'S1912'
+                AND t2.facname = 'TMAX'
+        GROUP BY forecaster) t2
+        ON t1.forecaster = t2.forecaster
+        FULL JOIN
+        (SELECT
+                forecaster,
+                CASE WHEN sum(total) = 0 THEN NULL ELSE
+                round(sum(ok2) * 100.0 / sum(total), 1) END mint,
+                sum(mae_total) / sum(total) tminmae
+        FROM
+        (
+                SELECT
+                        creator forecaster,
+                        CAST ( workday || fstime AS BIGINT ) wfdatetime
+                FROM
+                        PUBLIC.tb_bakki
+                WHERE
+                        workday BETWEEN #{start}
+                        AND #{end}
+                        AND fstime = '0800'
+                        AND datatype = '0'
+                GROUP BY
+                        creator,
+                        workday,
+                        fstime
+                ORDER BY
+                        creator
+        ) t1 LEFT JOIN tb_score_day_tem t2 ON
+                t1.wfdatetime = t2.wfdatetime
+                AND t2.wfhour IN (60, 72)
+                AND t2."type" = 'S1912'
+                AND t2.facname = 'TMIN'
+        GROUP BY forecaster) t3 ON
+        t2.forecaster = t3.forecaster) t1
+    </select>
+
+    <select id="getNightShiftScoreYt" resultType="java.util.Map">
+        SELECT
+            t1.*
+        FROM
+        (SELECT
+                t1.*,
+                t2.maxt,
+                t2.tmaxmae,
+                t3.mint,
+                t3.tminmae
+        FROM (SELECT
+                forecaster,
+                CASE
+                        WHEN SUM ( total ) = 0 THEN
+                        NULL ELSE SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total )
+                END qyzql,
+                CASE
+                    WHEN SUM ( total - pc_nd ) = 0 THEN
+                    NULL ELSE SUM ( pc_na ) * 100.0 / SUM ( total - pc_nd )
+                END qyts,
+                CASE
+                    WHEN SUM ( ybx1_na + ybx1_nb + ybx1_nc ) = 0 THEN
+                    NULL ELSE SUM ( ybx1_na ) * 100.0 / SUM ( ybx1_na + ybx1_nb + ybx1_nc )
+                END genzql,
+                CASE
+                    WHEN SUM ( ybx2_na + ybx2_nb + ybx2_nc ) = 0 THEN
+                    NULL ELSE SUM ( ybx2_na ) * 100.0 / SUM ( ybx2_na + ybx2_nb + ybx2_nc )
+                END stormzql,
+                CASE
+                    WHEN SUM ( fj1_na + fj1_nb + fj1_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj1_na ) * 100.0 / SUM ( fj1_na + fj1_nb + fj1_nc )
+                END fj1zql,
+                CASE
+                    WHEN SUM ( fj2_na + fj2_nb + fj2_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj2_na ) * 100.0 / SUM ( fj2_na + fj2_nb + fj2_nc )
+                END fj2zql,
+                CASE
+                    WHEN SUM ( fj3_na + fj3_nb + fj3_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj3_na ) * 100.0 / SUM ( fj3_na + fj3_nb + fj3_nc )
+                END fj3zql,
+                CASE
+                    WHEN SUM ( fj4_na + fj4_nb + fj4_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj4_na ) * 100.0 / SUM ( fj4_na + fj4_nb + fj4_nc )
+                END fj4zql,
+                CASE
+                    WHEN SUM ( fj5_na + fj5_nb + fj5_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj5_na ) * 100.0 / SUM ( fj5_na + fj5_nb + fj5_nc )
+                END fj5zql,
+                CASE
+                    WHEN SUM ( fj6_na + fj6_nb + fj6_nc ) = 0 THEN
+                    NULL ELSE SUM ( fj6_na ) * 100.0 / SUM ( fj6_na + fj6_nb + fj6_nc )
+                END fj6zql,
+                CASE
+                    WHEN SUM ( lj1_na + lj1_nb + lj1_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj1_na ) * 100.0 / SUM ( lj1_na + lj1_nb + lj1_nc )
+                END ljo1zql,
+                CASE
+                    WHEN SUM ( lj2_na + lj2_nb + lj2_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj2_na ) * 100.0 / SUM ( lj2_na + lj2_nb + lj2_nc )
+                END ljo2zql,
+                CASE
+                    WHEN SUM ( lj3_na + lj3_nb + lj3_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj3_na ) * 100.0 / SUM ( lj3_na + lj3_nb + lj3_nc )
+                END ljo3zql,
+                CASE
+                    WHEN SUM ( lj4_na + lj4_nb + lj4_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj4_na ) * 100.0 / SUM ( lj4_na + lj4_nb + lj4_nc )
+                END ljo4zql,
+                CASE
+                    WHEN SUM ( lj5_na + lj5_nb + lj5_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj5_na ) * 100.0 / SUM ( lj5_na + lj5_nb + lj5_nc )
+                END ljo5zql,
+                CASE
+                    WHEN SUM ( lj6_na + lj6_nb + lj6_nc ) = 0 THEN
+                    NULL ELSE SUM ( lj6_na ) * 100.0 / SUM ( lj6_na + lj6_nb + lj6_nc )
+                END ljo6zql
+        FROM
+        (
+                SELECT
+                        creator forecaster,
+                        CAST ( workday || fstime AS BIGINT ) wfdatetime
+                FROM
+                        PUBLIC.tb_bakki
+                WHERE
+                        workday BETWEEN #{start}
+                        AND #{end}
+                        AND fstime = '0800'
+                        AND datatype = '0'
+                GROUP BY
+                        creator,
+                        workday,
+                        fstime
+                ORDER BY
+                        creator
+        ) t1 LEFT JOIN tb_score_day_pre_yt t2 ON
+                t1.wfdatetime = t2.wfdatetime
+                AND t2.wfhour IN (60, 72)
+                AND t2."type" = 'S1912'
+        GROUP BY forecaster) t1
+        FULL JOIN
+        (SELECT
+                forecaster,
+                CASE WHEN sum(total) = 0 THEN NULL ELSE
+                round(sum(ok2) * 100.0 / sum(total), 1) END maxt,
+                sum(mae_total) / sum(total) tmaxmae
+        FROM
+        (
+                SELECT
+                        creator forecaster,
+                        CAST ( workday || fstime AS BIGINT ) wfdatetime
+                FROM
+                        PUBLIC.tb_bakki
+                WHERE
+                        workday BETWEEN #{start}
+                        AND #{end}
+                        AND fstime = '0800'
+                        AND datatype = '0'
+                GROUP BY
+                        creator,
+                        workday,
+                        fstime
+                ORDER BY
+                        creator
+        ) t1 LEFT JOIN tb_score_day_tem_yt t2 ON
+                t1.wfdatetime = t2.wfdatetime
+                AND t2.wfhour IN (60, 72)
+                AND t2."type" = 'S1912'
+                AND t2.facname = 'TMAX'
+        GROUP BY forecaster) t2
+        ON t1.forecaster = t2.forecaster
+        FULL JOIN
+        (SELECT
+                forecaster,
+                CASE WHEN sum(total) = 0 THEN NULL ELSE
+                round(sum(ok2) * 100.0 / sum(total), 1) END mint,
+                sum(mae_total) / sum(total) tminmae
+        FROM
+        (
+                SELECT
+                        creator forecaster,
+                        CAST ( workday || fstime AS BIGINT ) wfdatetime
+                FROM
+                        PUBLIC.tb_bakki
+                WHERE
+                        workday BETWEEN #{start}
+                        AND #{end}
+                        AND fstime = '0800'
+                        AND datatype = '0'
+                GROUP BY
+                        creator,
+                        workday,
+                        fstime
+                ORDER BY
+                        creator
+        ) t1 LEFT JOIN tb_score_day_tem_yt t2 ON
+                t1.wfdatetime = t2.wfdatetime
+                AND t2.wfhour IN (60, 72)
+                AND t2."type" = 'S1912'
+                AND t2.facname = 'TMIN'
+        GROUP BY forecaster) t3 ON
+        t2.forecaster = t3.forecaster) t1
+    </select>
+
+    <select id="getShortTermScore" resultType="java.util.Map">
+        SELECT
+            t2.forecaster,
+            t1.sh,
+            t2.sg,
+            t3.sr
+        FROM
+            (
+            SELECT
+                forecaster,
+                round( score / SCALE, 2 ) sh
+            FROM
+                (
+                SELECT
+                    forecaster,
+                SUM ( CASE WHEN effetime = '006' THEN ts * 6 WHEN effetime = '012' THEN ts * 4 ELSE 0 END ) score,
+            SUM ( CASE WHEN effetime = '006' THEN 6 WHEN effetime = '012' THEN 4 ELSE 0 END ) SCALE
+        FROM
+            (
+            SELECT
+                forecaster,
+                effetime,
+                round( na * 100.0 / ( na + nb + nc ), 2 ) ts
+            FROM
+                (
+                SELECT
+                    forecaster,
+                    effetime,
+                    SUM ( CASE WHEN A.rs = 'NA' THEN 1 ELSE 0 END ) NA,
+                    SUM ( CASE WHEN A.rs = 'NB' THEN 1 ELSE 0 END ) NB,
+                    SUM ( CASE WHEN A.rs = 'NC' THEN 1 ELSE 0 END ) NC
+                FROM
+                    tb_smpf_heavyshowerscore A,
+                    tb_smpf_heavyshowerindex B
+                WHERE
+                    A.showerindexkeyid = B.keyid
+                    AND B.BEGIN
+                        BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND code = '62'
+                    GROUP BY
+                        forecaster,
+                        effetime
+                    HAVING
+                        forecaster IS NOT NULL
+            ) t1
+            ) t1
+        GROUP BY
+            forecaster
+            ) t1
+            ) t1
+            RIGHT JOIN (
+            SELECT
+                forecaster,
+                round( score * 100 / SCALE, 2 ) sg
+            FROM
+                (
+                SELECT
+                    forecaster,
+                    SUM (
+                    CASE
+
+                            WHEN warningtype = '暴雨' THEN
+                            ts * 4
+                            WHEN warningtype = '雷雨大风' THEN
+                            ts * 3
+                            WHEN warningtype = '冰雹' THEN
+                            ts * 2
+                            WHEN warningtype = '雷电' THEN
+                            ts * 1 ELSE 0
+                        END
+                        ) score,
+                        SUM (
+                        CASE
+
+                                WHEN warningtype = '暴雨' THEN
+                                4
+                                WHEN warningtype = '雷雨大风' THEN
+                                3
+                                WHEN warningtype = '冰雹' THEN
+                                2
+                                WHEN warningtype = '雷电' THEN
+                                1 ELSE 0
+                            END
+                            ) SCALE
+                        FROM
+                            (
+                            SELECT
+                                forecaster,
+                                warningtype,
+                            CASE
+
+                                    WHEN na + nb + nc = 0 THEN
+                                    NULL ELSE round( na * 1.0 / ( na + nb + nc ), 2 )
+                                END ts
+                        FROM
+                            (
+                            SELECT
+                                forecaster,
+                                warningtype,
+                                SUM ( CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END ) na,
+                                SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+                                SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+                            FROM
+                                tb_smpf_obtwarningsignalscore
+                            WHERE
+                                department = '湖南省气象台'
+                                AND forecaster != '湖南省气象台'
+                                AND forecaster != ''
+                                AND inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                                AND warningtype IN ( '暴雨', '雷雨大风', '冰雹', '雷电' )
+                                AND test_level IN ( '红色', '橙色', '黄色' )
+                            GROUP BY
+                                forecaster,
+                                warningtype
+                                ) t1
+            ) rs
+        GROUP BY
+            forecaster
+            ) rs
+            ) t2 ON t1.forecaster = t2.forecaster
+            LEFT JOIN (
+            SELECT
+                forecaster,
+            CASE
+
+                    WHEN iszh = 0 THEN
+                    NULL ELSE round( pc / 3 + k1 / 6 + k2 / 4 + k3 / 4, 2 )
+                END sr
+        FROM
+            (
+            SELECT
+                forecaster,
+            CASE
+
+                    WHEN pc IS NULL
+                    AND k1 IS NULL
+                    AND k2 IS NULL
+                    AND k3 IS NULL THEN
+                        0 ELSE 1
+                    END iszh,
+        CASE
+
+            WHEN pc IS NULL THEN
+            0 ELSE pc
+            END pc,
+        CASE
+
+            WHEN k1 IS NULL THEN
+            0 ELSE k1
+            END k1,
+        CASE
+
+            WHEN k2 IS NULL THEN
+            0 ELSE k2
+            END k2,
+        CASE
+
+            WHEN k3 IS NULL THEN
+            0 ELSE k3
+            END k3
+        FROM
+            (
+            SELECT
+                forecaster,
+                SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total ) pc,
+            CASE
+
+                    WHEN SUM ( ybxa + ybxb + ybxc ) = 0 THEN
+                    NULL ELSE SUM ( ybxa ) * 100.0 / SUM ( ybxa + ybxb + ybxc )
+                END k1,
+        CASE
+
+            WHEN SUM ( ybx2a + ybx2b + ybx2c ) = 0 THEN
+            NULL ELSE SUM ( ybx2a ) * 100.0 / SUM ( ybx2a + ybx2b + ybx2c )
+            END k2,
+        CASE
+
+            WHEN SUM ( ybx3a + ybx3b + ybx3c ) = 0 THEN
+            NULL ELSE SUM ( ybx3a ) * 100.0 / SUM ( ybx3a + ybx3b + ybx3c )
+            END k3
+        FROM
+            (
+            SELECT
+                forecaster,
+                CAST ( to_char( "begin", 'yyyymmddhh24mi' ) AS BIGINT ) wfdatetime
+            FROM
+                tb_smpf_heavyshowerindex
+            WHERE
+                inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+            ) t1
+            LEFT JOIN tb_score_day_pre_duanlin t2 ON t1.wfdatetime = t2.wfdatetime
+        GROUP BY
+            forecaster
+            ) t1
+            ) t1
+            ) t3 ON t2.forecaster = t3.forecaster
+    </select>
+
+    <select id="getObjectiveScore" resultType="java.util.Map">
+        SELECT
+            t1.*,
+            t2.maxt,
+            t3.mint
+        FROM
+            (
+            SELECT CAST
+                ( 'JSCP' AS VARCHAR ) wfsrc,
+            CASE
+                WHEN SUM ( total ) = 0 THEN
+                NULL ELSE SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total )
+            END qyzql,
+            CASE
+                WHEN SUM ( total - pc_nd ) = 0 THEN
+                NULL ELSE SUM ( pc_na ) * 100.0 / SUM ( total - pc_nd )
+            END qyts,
+            CASE
+                WHEN SUM ( ybx1_na + ybx1_nb + ybx1_nc ) = 0 THEN
+                NULL ELSE SUM ( ybx1_na ) * 100.0 / SUM ( ybx1_na + ybx1_nb + ybx1_nc )
+            END genzql,
+            CASE
+                WHEN SUM ( ybx2_na + ybx2_nb + ybx2_nc ) = 0 THEN
+                NULL ELSE SUM ( ybx2_na ) * 100.0 / SUM ( ybx2_na + ybx2_nb + ybx2_nc )
+            END stormzql,
+            CASE
+                WHEN SUM ( fj1_na + fj1_nb + fj1_nc ) = 0 THEN
+                NULL ELSE SUM ( fj1_na ) * 100.0 / SUM ( fj1_na + fj1_nb + fj1_nc )
+            END fj1zql,
+            CASE
+                WHEN SUM ( fj2_na + fj2_nb + fj2_nc ) = 0 THEN
+                NULL ELSE SUM ( fj2_na ) * 100.0 / SUM ( fj2_na + fj2_nb + fj2_nc )
+            END fj2zql,
+            CASE
+                WHEN SUM ( fj3_na + fj3_nb + fj3_nc ) = 0 THEN
+                NULL ELSE SUM ( fj3_na ) * 100.0 / SUM ( fj3_na + fj3_nb + fj3_nc )
+            END fj3zql,
+            CASE
+                WHEN SUM ( fj4_na + fj4_nb + fj4_nc ) = 0 THEN
+                NULL ELSE SUM ( fj4_na ) * 100.0 / SUM ( fj4_na + fj4_nb + fj4_nc )
+            END fj4zql,
+            CASE
+                WHEN SUM ( fj5_na + fj5_nb + fj5_nc ) = 0 THEN
+                NULL ELSE SUM ( fj5_na ) * 100.0 / SUM ( fj5_na + fj5_nb + fj5_nc )
+            END fj5zql,
+            CASE
+                WHEN SUM ( fj6_na + fj6_nb + fj6_nc ) = 0 THEN
+                NULL ELSE SUM ( fj6_na ) * 100.0 / SUM ( fj6_na + fj6_nb + fj6_nc )
+            END fj6zql,
+            CASE
+                WHEN SUM ( lj1_na + lj1_nb + lj1_nc ) = 0 THEN
+                NULL ELSE SUM ( lj1_na ) * 100.0 / SUM ( lj1_na + lj1_nb + lj1_nc )
+            END ljo1zql,
+            CASE
+                WHEN SUM ( lj2_na + lj2_nb + lj2_nc ) = 0 THEN
+                NULL ELSE SUM ( lj2_na ) * 100.0 / SUM ( lj2_na + lj2_nb + lj2_nc )
+            END ljo2zql,
+            CASE
+                WHEN SUM ( lj3_na + lj3_nb + lj3_nc ) = 0 THEN
+                NULL ELSE SUM ( lj3_na ) * 100.0 / SUM ( lj3_na + lj3_nb + lj3_nc )
+            END ljo3zql,
+            CASE
+                WHEN SUM ( lj4_na + lj4_nb + lj4_nc ) = 0 THEN
+                NULL ELSE SUM ( lj4_na ) * 100.0 / SUM ( lj4_na + lj4_nb + lj4_nc )
+            END ljo4zql,
+            CASE
+                WHEN SUM ( lj5_na + lj5_nb + lj5_nc ) = 0 THEN
+                NULL ELSE SUM ( lj5_na ) * 100.0 / SUM ( lj5_na + lj5_nb + lj5_nc )
+            END ljo5zql,
+            CASE
+                WHEN SUM ( lj6_na + lj6_nb + lj6_nc ) = 0 THEN
+                NULL ELSE SUM ( lj6_na ) * 100.0 / SUM ( lj6_na + lj6_nb + lj6_nc )
+            END ljo6zql
+        FROM
+            public_keguan.tb_score_day_pre
+        WHERE
+            wfdatetime BETWEEN CAST ( #{start} || '0000' AS BIGINT )
+            AND CAST ( #{end} || '2359' AS BIGINT )
+            AND "type" = 'S1912'
+            ) t1
+            LEFT JOIN (
+            SELECT CAST
+                ( 'JSCP' AS VARCHAR ) wfsrc,
+                SUM ( ok2 ) * 100.0 / SUM ( total ) maxt
+            FROM
+                public_keguan.tb_score_day_tem
+            WHERE
+                wfdatetime BETWEEN CAST ( #{start} || '0000' AS BIGINT )
+                AND CAST ( #{end} || '2359' AS BIGINT )
+                AND facname = 'TMAX'
+                AND "type" = 'S1912'
+            ) t2 ON t1.wfsrc = t2.wfsrc
+            LEFT JOIN (
+            SELECT CAST
+                ( 'JSCP' AS VARCHAR ) wfsrc,
+                SUM ( ok2 ) * 100.0 / SUM ( total ) mint
+            FROM
+                public_keguan.tb_score_day_tem
+            WHERE
+                wfdatetime BETWEEN CAST ( #{start} || '0000' AS BIGINT )
+                AND CAST ( #{end} || '2359' AS BIGINT )
+                AND facname = 'TMIN'
+                AND "type" = 'S1912'
+            ) t3 ON t1.wfsrc = t3.wfsrc
+    </select>
+
+    <select id="getCityScore" resultType="java.util.Map">
+        SELECT
+            t1.*,
+            CASE WHEN t1.wfsrc IS NOT NULL THEN t1.wfsrc
+            WHEN t2.wfsrc IS NOT NULL THEN t2.wfsrc
+            WHEN t3.wfsrc IS NOT NULL THEN t3.wfsrc END model,
+            t2.tminozql,
+            t2.tmintzql mint,
+            t2.tminmae,
+            t3.tmaxozql,
+            t3.tmaxtzql maxt,
+            t3.tmaxmae
+        FROM
+            (
+            SELECT
+                wfsrc,
+            CASE
+                WHEN SUM ( total ) = 0 THEN
+                NULL ELSE SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total )
+            END qyzql,
+        CASE
+            WHEN SUM ( total - pc_nd ) = 0 THEN
+            NULL ELSE SUM ( pc_na ) * 100.0 / SUM ( total - pc_nd )
+            END qyts,
+        CASE
+            WHEN SUM ( ybx1_na + ybx1_nb + ybx1_nc ) = 0 THEN
+            NULL ELSE SUM ( ybx1_na ) * 100.0 / SUM ( ybx1_na + ybx1_nb + ybx1_nc )
+            END genzql,
+        CASE
+            WHEN SUM ( ybx2_na + ybx2_nb + ybx2_nc ) = 0 THEN
+            NULL ELSE SUM ( ybx2_na ) * 100.0 / SUM ( ybx2_na + ybx2_nb + ybx2_nc )
+            END stormzql,
+        CASE
+            WHEN SUM ( fj1_na + fj1_nb + fj1_nc ) = 0 THEN
+            NULL ELSE SUM ( fj1_na ) * 100.0 / SUM ( fj1_na + fj1_nb + fj1_nc )
+            END fj1zql,
+        CASE
+            WHEN SUM ( fj2_na + fj2_nb + fj2_nc ) = 0 THEN
+            NULL ELSE SUM ( fj2_na ) * 100.0 / SUM ( fj2_na + fj2_nb + fj2_nc )
+            END fj2zql,
+        CASE
+            WHEN SUM ( fj3_na + fj3_nb + fj3_nc ) = 0 THEN
+            NULL ELSE SUM ( fj3_na ) * 100.0 / SUM ( fj3_na + fj3_nb + fj3_nc )
+            END fj3zql,
+        CASE
+            WHEN SUM ( fj4_na + fj4_nb + fj4_nc ) = 0 THEN
+            NULL ELSE SUM ( fj4_na ) * 100.0 / SUM ( fj4_na + fj4_nb + fj4_nc )
+            END fj4zql,
+        CASE
+            WHEN SUM ( fj5_na + fj5_nb + fj5_nc ) = 0 THEN
+            NULL ELSE SUM ( fj5_na ) * 100.0 / SUM ( fj5_na + fj5_nb + fj5_nc )
+            END fj5zql,
+        CASE
+            WHEN SUM ( fj6_na + fj6_nb + fj6_nc ) = 0 THEN
+            NULL ELSE SUM ( fj6_na ) * 100.0 / SUM ( fj6_na + fj6_nb + fj6_nc )
+            END fj6zql,
+        CASE
+            WHEN SUM ( lj1_na + lj1_nb + lj1_nc ) = 0 THEN
+            NULL ELSE SUM ( lj1_na ) * 100.0 / SUM ( lj1_na + lj1_nb + lj1_nc )
+            END ljo1zql,
+        CASE
+            WHEN SUM ( lj2_na + lj2_nb + lj2_nc ) = 0 THEN
+            NULL ELSE SUM ( lj2_na ) * 100.0 / SUM ( lj2_na + lj2_nb + lj2_nc )
+            END ljo2zql,
+        CASE
+            WHEN SUM ( lj3_na + lj3_nb + lj3_nc ) = 0 THEN
+            NULL ELSE SUM ( lj3_na ) * 100.0 / SUM ( lj3_na + lj3_nb + lj3_nc )
+            END ljo3zql,
+        CASE
+            WHEN SUM ( lj4_na + lj4_nb + lj4_nc ) = 0 THEN
+            NULL ELSE SUM ( lj4_na ) * 100.0 / SUM ( lj4_na + lj4_nb + lj4_nc )
+            END ljo4zql,
+        CASE
+            WHEN SUM ( lj5_na + lj5_nb + lj5_nc ) = 0 THEN
+            NULL ELSE SUM ( lj5_na ) * 100.0 / SUM ( lj5_na + lj5_nb + lj5_nc )
+            END ljo5zql,
+        CASE
+            WHEN SUM ( lj6_na + lj6_nb + lj6_nc ) = 0 THEN
+            NULL ELSE SUM ( lj6_na ) * 100.0 / SUM ( lj6_na + lj6_nb + lj6_nc )
+            END ljo6zql
+        FROM
+            public_dishi.tb_score_day_pre
+        WHERE
+            wfdatetime BETWEEN CAST ( #{start} || '0000' AS BIGINT )
+            AND CAST ( #{end} || '2359' AS BIGINT )
+            AND "type" = 'S1912'
+            AND wfhour IN
+            <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                CAST(#{item} AS INTEGER)
+            </foreach>
+        GROUP BY
+            wfsrc
+            ) t1 FULL OUTER JOIN
+            (
+            SELECT
+                wfsrc,
+                SUM ( ok1 ) * 100.0 / SUM ( total ) tminozql,
+                SUM ( ok2 ) * 100.0 / SUM ( total ) tmintzql,
+                sum(mae_total) / sum(total) tminmae
+            FROM
+                public_dishi.tb_score_day_tem
+            WHERE
+                wfdatetime BETWEEN CAST ( #{start} || '0000' AS BIGINT )
+                AND CAST ( #{end} || '2359' AS BIGINT )
+                AND "type" = 'S1912'
+                AND wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
+                AND facname = 'TMIN'
+            GROUP BY
+                wfsrc
+            ) t2 ON t1.wfsrc = t2.wfsrc FULL OUTER JOIN
+            (
+            SELECT
+                wfsrc,
+                SUM ( ok1 ) * 100.0 / SUM ( total ) tmaxozql,
+                SUM ( ok2 ) * 100.0 / SUM ( total ) tmaxtzql,
+                sum(mae_total) / sum(total) tmaxmae
+            FROM
+                public_dishi.tb_score_day_tem
+            WHERE
+                wfdatetime BETWEEN CAST ( #{start} || '0000' AS BIGINT )
+                AND CAST ( #{end} || '2359' AS BIGINT )
+                AND "type" = 'S1912'
+                AND wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
+                AND facname = 'TMAX'
+            GROUP BY
+                wfsrc
+            ) t3 on t2.wfsrc = t3.wfsrc
+    </select>
+
+    <select id="getCityScoreSt" resultType="java.util.Map">
+        SELECT
+            t1.*,
+            CASE WHEN t1.wfsrc IS NOT NULL THEN t1.wfsrc
+            WHEN t2.wfsrc IS NOT NULL THEN t2.wfsrc
+            WHEN t3.wfsrc IS NOT NULL THEN t3.wfsrc END model,
+            t2.tminozql,
+            t2.tmintzql mint,
+            t2.tminmae,
+            t3.tmaxozql,
+            t3.tmaxtzql maxt,
+            t3.tmaxmae
+        FROM
+            (
+            SELECT
+                wfsrc,
+            CASE
+                WHEN SUM ( total ) = 0 THEN
+                NULL ELSE SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total )
+            END qyzql,
+        CASE
+            WHEN SUM ( total - pc_nd ) = 0 THEN
+            NULL ELSE SUM ( pc_na ) * 100.0 / SUM ( total - pc_nd )
+            END qyts,
+        CASE
+            WHEN SUM ( ybx1_na + ybx1_nb + ybx1_nc ) = 0 THEN
+            NULL ELSE SUM ( ybx1_na ) * 100.0 / SUM ( ybx1_na + ybx1_nb + ybx1_nc )
+            END genzql,
+        CASE
+            WHEN SUM ( ybx2_na + ybx2_nb + ybx2_nc ) = 0 THEN
+            NULL ELSE SUM ( ybx2_na ) * 100.0 / SUM ( ybx2_na + ybx2_nb + ybx2_nc )
+            END stormzql,
+        CASE
+            WHEN SUM ( fj1_na + fj1_nb + fj1_nc ) = 0 THEN
+            NULL ELSE SUM ( fj1_na ) * 100.0 / SUM ( fj1_na + fj1_nb + fj1_nc )
+            END fj1zql,
+        CASE
+            WHEN SUM ( fj2_na + fj2_nb + fj2_nc ) = 0 THEN
+            NULL ELSE SUM ( fj2_na ) * 100.0 / SUM ( fj2_na + fj2_nb + fj2_nc )
+            END fj2zql,
+        CASE
+            WHEN SUM ( fj3_na + fj3_nb + fj3_nc ) = 0 THEN
+            NULL ELSE SUM ( fj3_na ) * 100.0 / SUM ( fj3_na + fj3_nb + fj3_nc )
+            END fj3zql,
+        CASE
+            WHEN SUM ( fj4_na + fj4_nb + fj4_nc ) = 0 THEN
+            NULL ELSE SUM ( fj4_na ) * 100.0 / SUM ( fj4_na + fj4_nb + fj4_nc )
+            END fj4zql,
+        CASE
+            WHEN SUM ( fj5_na + fj5_nb + fj5_nc ) = 0 THEN
+            NULL ELSE SUM ( fj5_na ) * 100.0 / SUM ( fj5_na + fj5_nb + fj5_nc )
+            END fj5zql,
+        CASE
+            WHEN SUM ( fj6_na + fj6_nb + fj6_nc ) = 0 THEN
+            NULL ELSE SUM ( fj6_na ) * 100.0 / SUM ( fj6_na + fj6_nb + fj6_nc )
+            END fj6zql,
+        CASE
+            WHEN SUM ( lj1_na + lj1_nb + lj1_nc ) = 0 THEN
+            NULL ELSE SUM ( lj1_na ) * 100.0 / SUM ( lj1_na + lj1_nb + lj1_nc )
+            END ljo1zql,
+        CASE
+            WHEN SUM ( lj2_na + lj2_nb + lj2_nc ) = 0 THEN
+            NULL ELSE SUM ( lj2_na ) * 100.0 / SUM ( lj2_na + lj2_nb + lj2_nc )
+            END ljo2zql,
+        CASE
+            WHEN SUM ( lj3_na + lj3_nb + lj3_nc ) = 0 THEN
+            NULL ELSE SUM ( lj3_na ) * 100.0 / SUM ( lj3_na + lj3_nb + lj3_nc )
+            END ljo3zql,
+        CASE
+            WHEN SUM ( lj4_na + lj4_nb + lj4_nc ) = 0 THEN
+            NULL ELSE SUM ( lj4_na ) * 100.0 / SUM ( lj4_na + lj4_nb + lj4_nc )
+            END ljo4zql,
+        CASE
+            WHEN SUM ( lj5_na + lj5_nb + lj5_nc ) = 0 THEN
+            NULL ELSE SUM ( lj5_na ) * 100.0 / SUM ( lj5_na + lj5_nb + lj5_nc )
+            END ljo5zql,
+        CASE
+            WHEN SUM ( lj6_na + lj6_nb + lj6_nc ) = 0 THEN
+            NULL ELSE SUM ( lj6_na ) * 100.0 / SUM ( lj6_na + lj6_nb + lj6_nc )
+            END ljo6zql
+        FROM
+            public_dishi.tb_score_day_pre_st
+        WHERE
+            wfdatetime BETWEEN CAST ( #{start} || '0000' AS BIGINT )
+            AND CAST ( #{end} || '2359' AS BIGINT )
+            AND "type" = 'S1912'
+            AND wfhour IN
+            <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                CAST(#{item} AS INTEGER)
+            </foreach>
+        GROUP BY
+            wfsrc
+            ) t1 FULL OUTER JOIN
+            (
+            SELECT
+                wfsrc,
+                SUM ( ok1 ) * 100.0 / SUM ( total ) tminozql,
+                SUM ( ok2 ) * 100.0 / SUM ( total ) tmintzql,
+                sum(mae_total) / sum(total) tminmae
+            FROM
+                public_dishi.tb_score_day_tem_st
+            WHERE
+                wfdatetime BETWEEN CAST ( #{start} || '0000' AS BIGINT )
+                AND CAST ( #{end} || '2359' AS BIGINT )
+                AND "type" = 'S1912'
+                AND wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
+                AND facname = 'TMIN'
+            GROUP BY
+                wfsrc
+            ) t2 ON t1.wfsrc = t2.wfsrc FULL OUTER JOIN
+            (
+            SELECT
+                wfsrc,
+                SUM ( ok1 ) * 100.0 / SUM ( total ) tmaxozql,
+                SUM ( ok2 ) * 100.0 / SUM ( total ) tmaxtzql,
+                sum(mae_total) / sum(total) tmaxmae
+            FROM
+                public_dishi.tb_score_day_tem_st
+            WHERE
+                wfdatetime BETWEEN CAST ( #{start} || '0000' AS BIGINT )
+                AND CAST ( #{end} || '2359' AS BIGINT )
+                AND "type" = 'S1912'
+                AND wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
+                AND facname = 'TMAX'
+            GROUP BY
+                wfsrc
+            ) t3 on t2.wfsrc = t3.wfsrc
+    </select>
+
+    <select id="getCityWarningScore" resultType="java.util.Map">
+        SELECT
+            area,
+            CASE WHEN area = '湘潭市' THEN 'BFXK'
+            WHEN area = '湘西州' THEN 'BFJO'
+            WHEN area = '张家界市' THEN 'BFDA'
+            WHEN area = '永州市' THEN 'BFYE'
+            WHEN area = '株洲市' THEN 'BFZU'
+            WHEN area = '益阳市' THEN 'BFYY'
+            WHEN area = '怀化市' THEN 'BFHW'
+            WHEN area = '岳阳市' THEN 'BFUY'
+            WHEN area = '邵阳市' THEN 'BFSB'
+            WHEN area = '衡阳市' THEN 'BFHA'
+            WHEN area = '常德市' THEN 'BFCA'
+            WHEN area = '郴州市' THEN 'BFCE'
+            WHEN area = '长沙市' THEN 'BFCS'
+            WHEN area = '娄底市' THEN 'BFLD' END model,
+            CASE WHEN SUM ( COUNT ) = 0 THEN -999.0 ELSE
+            ROUND( CAST ( SUM ( ts * typeweights ) / SUM ( COUNT ) AS NUMERIC ), 3 ) END zh
+        FROM
+            (
+                SELECT
+                    area,
+                    warningtype,
+                    SUM ( ts * levelweights ) / SUM ( COUNT ) ts,
+                    CASE
+                        WHEN warningtype = '暴雨' THEN 1.5
+                        WHEN warningtype = '暴雪' THEN 1.5
+                        WHEN warningtype = '大风' THEN 1
+                        WHEN warningtype = '大雾' THEN 1
+                        WHEN warningtype = '霾' THEN 1
+                        WHEN warningtype = '雷电' THEN 1
+                        WHEN warningtype = '冰雹' THEN 1.5
+                        WHEN warningtype = '雷雨大风' THEN 1.5
+                    END typeweights,
+                    CASE
+                        WHEN SUM ( ts * levelweights ) / SUM ( COUNT ) IS NULL THEN
+                        0 ELSE 1
+                    END COUNT
+                FROM
+                (
+                    SELECT
+                        area,
+                        warningtype,
+                        "level",
+                    CASE
+                        WHEN na + nb + nc = 0 THEN
+                        NULL ELSE na * 100 / ( na + nb + nc )
+                    END ts,
+                    CASE
+                        WHEN LEVEL = '红色' THEN 1.8
+                        WHEN LEVEL = '橙色' THEN 1.5
+                        WHEN LEVEL = '黄色' THEN 1.2
+                        WHEN LEVEL = '蓝色' THEN 1
+                    END levelweights,
+                    CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1 END COUNT
+                FROM
+                    (
+                        SELECT
+                            area,
+                            warningtype,
+                            test_level "level",
+                            SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,
+                            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+                            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+                        FROM
+                            PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+                        WHERE
+                            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND warningtype != ''
+                            AND department != '湖南省气象台'
+                        GROUP BY
+                            area,
+                            warningtype,
+                            test_level
+                    ) rs
+                ) rs
+                GROUP BY
+                    area,
+                    warningtype
+            ) rs
+        GROUP BY
+            area
+    </select>
+
+    <select id="getCityHeavyScore" resultType="java.util.Map">
+        SELECT
+            area,
+            CASE
+                WHEN area = '湘潭市' THEN 'BFXK'
+                WHEN area = '湘西州' THEN 'BFJO'
+                WHEN area = '张家界市' THEN 'BFDA'
+                WHEN area = '永州市' THEN 'BFYE'
+                WHEN area = '株洲市' THEN 'BFZU'
+                WHEN area = '益阳市' THEN 'BFYY'
+                WHEN area = '怀化市' THEN 'BFHW'
+                WHEN area = '岳阳市' THEN 'BFUY'
+                WHEN area = '邵阳市' THEN 'BFSB'
+                WHEN area = '衡阳市' THEN 'BFHA'
+                WHEN area = '常德市' THEN 'BFCA'
+                WHEN area = '郴州市' THEN 'BFCE'
+                WHEN area = '长沙市' THEN 'BFCS'
+                WHEN area = '娄底市' THEN 'BFLD'
+            END model,
+            CASE
+                WHEN na + nb + nc = 0 THEN
+                NULL ELSE round( CAST ( na * 100.0 / ( na + nb + nc ) AS NUMERIC ), 3 )
+            END ts
+        FROM
+            (
+            SELECT
+                area,
+                SUM ( CASE WHEN warningp_bfj = 'NA' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
+                SUM ( CASE WHEN warningp_bfj = 'NB' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
+                SUM ( CASE WHEN warningp_bfj = 'NC' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc
+            FROM
+                PUBLIC.tb_smpf_obtwarningsignalscore_qjsjc
+            WHERE
+                TRIM ( '气象台' FROM department ) IN ( SELECT area FROM PUBLIC.tb_smpf_obtwarningsignalscore_qjsjc GROUP BY area )
+                AND inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+            GROUP BY
+            area
+            ) t1
+    </select>
+
+    <select id="getForecasterScore" resultType="java.util.Map">
+        SELECT
+            t1.*,
+            t2.bc,
+            t2.avgbc
+        FROM
+        (
+        SELECT
+            forecaster,
+            department,
+            CASE
+                WHEN SUM ( total ) = 0 THEN
+                NULL ELSE SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total )
+            END qyzql,
+            CASE
+                WHEN SUM ( total - pc_nd ) = 0 THEN
+                NULL ELSE SUM ( pc_na ) * 100.0 / SUM ( total - pc_nd )
+            END qyts,
+            CASE
+                WHEN SUM ( ybx1_na + ybx1_nb + ybx1_nc ) = 0 THEN
+                NULL ELSE SUM ( ybx1_na ) * 100.0 / SUM ( ybx1_na + ybx1_nb + ybx1_nc )
+            END genzql,
+            CASE
+                WHEN SUM ( ybx2_na + ybx2_nb + ybx2_nc ) = 0 THEN
+                NULL ELSE SUM ( ybx2_na ) * 100.0 / SUM ( ybx2_na + ybx2_nb + ybx2_nc )
+            END stormzql,
+            CASE
+                WHEN SUM ( fj1_na + fj1_nb + fj1_nc ) = 0 THEN
+                NULL ELSE SUM ( fj1_na ) * 100.0 / SUM ( fj1_na + fj1_nb + fj1_nc )
+            END fj1zql,
+            CASE
+                WHEN SUM ( fj2_na + fj2_nb + fj2_nc ) = 0 THEN
+                NULL ELSE SUM ( fj2_na ) * 100.0 / SUM ( fj2_na + fj2_nb + fj2_nc )
+            END fj2zql,
+            CASE
+                WHEN SUM ( fj3_na + fj3_nb + fj3_nc ) = 0 THEN
+                NULL ELSE SUM ( fj3_na ) * 100.0 / SUM ( fj3_na + fj3_nb + fj3_nc )
+            END fj3zql,
+            CASE
+                WHEN SUM ( fj4_na + fj4_nb + fj4_nc ) = 0 THEN
+                NULL ELSE SUM ( fj4_na ) * 100.0 / SUM ( fj4_na + fj4_nb + fj4_nc )
+            END fj4zql,
+            CASE
+                WHEN SUM ( fj5_na + fj5_nb + fj5_nc ) = 0 THEN
+                NULL ELSE SUM ( fj5_na ) * 100.0 / SUM ( fj5_na + fj5_nb + fj5_nc )
+            END fj5zql,
+            CASE
+                WHEN SUM ( fj6_na + fj6_nb + fj6_nc ) = 0 THEN
+                NULL ELSE SUM ( fj6_na ) * 100.0 / SUM ( fj6_na + fj6_nb + fj6_nc )
+            END fj6zql,
+            CASE
+                WHEN SUM ( lj1_na + lj1_nb + lj1_nc ) = 0 THEN
+                NULL ELSE SUM ( lj1_na ) * 100.0 / SUM ( lj1_na + lj1_nb + lj1_nc )
+            END ljo1zql,
+            CASE
+                WHEN SUM ( lj2_na + lj2_nb + lj2_nc ) = 0 THEN
+                NULL ELSE SUM ( lj2_na ) * 100.0 / SUM ( lj2_na + lj2_nb + lj2_nc )
+            END ljo2zql,
+            CASE
+                WHEN SUM ( lj3_na + lj3_nb + lj3_nc ) = 0 THEN
+                NULL ELSE SUM ( lj3_na ) * 100.0 / SUM ( lj3_na + lj3_nb + lj3_nc )
+            END ljo3zql,
+            CASE
+                WHEN SUM ( lj4_na + lj4_nb + lj4_nc ) = 0 THEN
+                NULL ELSE SUM ( lj4_na ) * 100.0 / SUM ( lj4_na + lj4_nb + lj4_nc )
+            END ljo4zql,
+            CASE
+                WHEN SUM ( lj5_na + lj5_nb + lj5_nc ) = 0 THEN
+                NULL ELSE SUM ( lj5_na ) * 100.0 / SUM ( lj5_na + lj5_nb + lj5_nc )
+            END ljo5zql,
+            CASE
+                WHEN SUM ( lj6_na + lj6_nb + lj6_nc ) = 0 THEN
+                NULL ELSE SUM ( lj6_na ) * 100.0 / SUM ( lj6_na + lj6_nb + lj6_nc )
+            END ljo6zql,
+            SUM ( mintok2 ) * 100.0 / SUM ( minttotal ) mint,
+            SUM ( mintmae ) / SUM ( minttotal ) tminmae,
+            SUM ( maxtok2 ) * 100.0 / SUM ( maxttotal ) maxt,
+            SUM ( maxtmae ) / SUM ( maxttotal ) tmaxmae
+        FROM
+            (
+            SELECT
+                *
+            FROM
+                (
+                SELECT
+                    forecaster,
+                    department,
+                    CASE WHEN department = '湘潭' THEN 'BFXK'
+                    WHEN department = '吉首' THEN 'BFJO'
+                    WHEN department = '张家界' THEN 'BFDA'
+                    WHEN department = '永州' THEN 'BFYE'
+                    WHEN department = '株洲' THEN 'BFZU'
+                    WHEN department = '益阳' THEN 'BFYY'
+                    WHEN department = '怀化' THEN 'BFHW'
+                    WHEN department = '岳阳' THEN 'BFUY'
+                    WHEN department = '邵阳' THEN 'BFSB'
+                    WHEN department = '衡阳' THEN 'BFHA'
+                    WHEN department = '常德' THEN 'BFCA'
+                    WHEN department = '郴州' THEN 'BFCE'
+                    WHEN department = '长沙' THEN 'BFCS'
+                    WHEN department = '娄底' THEN 'BFLD' END wfsrc,
+                    CAST ( to_char( inputtime + '8 hour', 'yyyymmddhh24mi' ) AS BIGINT ) wfdatetime
+                FROM
+                    public_dishi.tb_smpf_forecastdataindex
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                    AND forecaster != ''
+                    AND department != '湖南省'
+                GROUP BY
+                    forecaster,
+                    department,
+                    inputtime
+                ORDER BY
+                    forecaster
+                ) t1
+                LEFT JOIN ( SELECT * FROM public_dishi.tb_score_day_pre WHERE wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
+                AND "type" = 'S1912' ) t2 ON t1.wfdatetime = t2.wfdatetime
+                AND t1.wfsrc = t2.wfsrc
+                LEFT JOIN (
+                SELECT
+                    wfsrc,
+                    wfdatetime,
+                    mae_total mintmae,
+                    ok2 mintok2,
+                    total minttotal
+                FROM
+                    public_dishi.tb_score_day_tem
+                WHERE
+                    wfhour IN
+                    <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                        CAST(#{item} AS INTEGER)
+                    </foreach>
+                    AND "type" = 'S1912'
+                    AND facname = 'TMIN'
+                ) t3 ON t1.wfdatetime = t3.wfdatetime
+                AND t1.wfsrc = t3.wfsrc
+                LEFT JOIN (
+                SELECT
+                    wfsrc,
+                    wfdatetime,
+                    mae_total maxtmae,
+                    ok2 maxtok2,
+                    total maxttotal
+                FROM
+                    public_dishi.tb_score_day_tem
+                WHERE
+                    wfhour IN
+                    <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                        CAST(#{item} AS INTEGER)
+                    </foreach>
+                    AND "type" = 'S1912'
+                    AND facname = 'TMAX'
+                ) t4 ON t1.wfdatetime = t4.wfdatetime
+                AND t1.wfsrc = t4.wfsrc
+            ) t1
+        GROUP BY
+            forecaster,
+            department
+        ) t1 LEFT JOIN (
+            SELECT
+                t1.*,
+                t2.avgbc
+            FROM
+                (SELECT
+                    forecaster,
+                    department,
+                    count(1) bc
+                FROM
+                    public_dishi.tb_smpf_forecastdataindex
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                    AND forecaster != ''
+                    AND department != '湖南省'
+                GROUP BY
+                    forecaster,
+                    department) t1
+            LEFT JOIN
+                (SELECT
+                    department,
+                    round(avg(bc) * (2.0 / 3)) avgbc
+                FROM
+                (
+                    SELECT
+                        department,
+                        count(forecaster) bc
+                    FROM
+                        public_dishi.tb_smpf_forecastdataindex
+                    WHERE
+                        inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND forecaster != ''
+                        AND department != '湖南省'
+                    GROUP BY
+                        forecaster,
+                        department
+                ) t1 GROUP BY department) t2
+            ON t1.department = t2.department
+          ) t2 ON t1.forecaster = t2.forecaster
+          AND t1.department = t2.department
+    </select>
+
+    <select id="getForecasterScore2" resultType="java.util.Map">
+        SELECT
+        t1.*,
+        t2.bc,
+        t2.avgbc
+        FROM
+        (
+        SELECT
+        forecaster,
+        department,
+        CASE
+        WHEN SUM ( total ) = 0 THEN
+        NULL ELSE SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total )
+        END qyzql,
+        CASE
+        WHEN SUM ( total - pc_nd ) = 0 THEN
+        NULL ELSE SUM ( pc_na ) * 100.0 / SUM ( total - pc_nd )
+        END qyts,
+        CASE
+        WHEN SUM ( ybx1_na + ybx1_nb + ybx1_nc ) = 0 THEN
+        NULL ELSE SUM ( ybx1_na ) * 100.0 / SUM ( ybx1_na + ybx1_nb + ybx1_nc )
+        END genzql,
+        CASE
+        WHEN SUM ( ybx2_na + ybx2_nb + ybx2_nc ) = 0 THEN
+        NULL ELSE SUM ( ybx2_na ) * 100.0 / SUM ( ybx2_na + ybx2_nb + ybx2_nc )
+        END stormzql,
+        CASE
+        WHEN SUM ( fj1_na + fj1_nb + fj1_nc ) = 0 THEN
+        NULL ELSE SUM ( fj1_na ) * 100.0 / SUM ( fj1_na + fj1_nb + fj1_nc )
+        END fj1zql,
+        CASE
+        WHEN SUM ( fj2_na + fj2_nb + fj2_nc ) = 0 THEN
+        NULL ELSE SUM ( fj2_na ) * 100.0 / SUM ( fj2_na + fj2_nb + fj2_nc )
+        END fj2zql,
+        CASE
+        WHEN SUM ( fj3_na + fj3_nb + fj3_nc ) = 0 THEN
+        NULL ELSE SUM ( fj3_na ) * 100.0 / SUM ( fj3_na + fj3_nb + fj3_nc )
+        END fj3zql,
+        CASE
+        WHEN SUM ( fj4_na + fj4_nb + fj4_nc ) = 0 THEN
+        NULL ELSE SUM ( fj4_na ) * 100.0 / SUM ( fj4_na + fj4_nb + fj4_nc )
+        END fj4zql,
+        CASE
+        WHEN SUM ( fj5_na + fj5_nb + fj5_nc ) = 0 THEN
+        NULL ELSE SUM ( fj5_na ) * 100.0 / SUM ( fj5_na + fj5_nb + fj5_nc )
+        END fj5zql,
+        CASE
+        WHEN SUM ( fj6_na + fj6_nb + fj6_nc ) = 0 THEN
+        NULL ELSE SUM ( fj6_na ) * 100.0 / SUM ( fj6_na + fj6_nb + fj6_nc )
+        END fj6zql,
+        CASE
+        WHEN SUM ( lj1_na + lj1_nb + lj1_nc ) = 0 THEN
+        NULL ELSE SUM ( lj1_na ) * 100.0 / SUM ( lj1_na + lj1_nb + lj1_nc )
+        END ljo1zql,
+        CASE
+        WHEN SUM ( lj2_na + lj2_nb + lj2_nc ) = 0 THEN
+        NULL ELSE SUM ( lj2_na ) * 100.0 / SUM ( lj2_na + lj2_nb + lj2_nc )
+        END ljo2zql,
+        CASE
+        WHEN SUM ( lj3_na + lj3_nb + lj3_nc ) = 0 THEN
+        NULL ELSE SUM ( lj3_na ) * 100.0 / SUM ( lj3_na + lj3_nb + lj3_nc )
+        END ljo3zql,
+        CASE
+        WHEN SUM ( lj4_na + lj4_nb + lj4_nc ) = 0 THEN
+        NULL ELSE SUM ( lj4_na ) * 100.0 / SUM ( lj4_na + lj4_nb + lj4_nc )
+        END ljo4zql,
+        CASE
+        WHEN SUM ( lj5_na + lj5_nb + lj5_nc ) = 0 THEN
+        NULL ELSE SUM ( lj5_na ) * 100.0 / SUM ( lj5_na + lj5_nb + lj5_nc )
+        END ljo5zql,
+        CASE
+        WHEN SUM ( lj6_na + lj6_nb + lj6_nc ) = 0 THEN
+        NULL ELSE SUM ( lj6_na ) * 100.0 / SUM ( lj6_na + lj6_nb + lj6_nc )
+        END ljo6zql,
+        SUM ( mintok2 ) * 100.0 / SUM ( minttotal ) mint,
+        SUM ( mintmae ) / SUM ( minttotal ) tminmae,
+        SUM ( maxtok2 ) * 100.0 / SUM ( maxttotal ) maxt,
+        SUM ( maxtmae ) / SUM ( maxttotal ) tmaxmae
+        FROM
+        (
+        SELECT
+        *
+        FROM
+        (
+        SELECT
+        forecaster,
+        department,
+        CASE WHEN department = '湘潭' THEN 'BFXK'
+        WHEN department = '吉首' THEN 'BFJO'
+        WHEN department = '张家界' THEN 'BFDA'
+        WHEN department = '永州' THEN 'BFYE'
+        WHEN department = '株洲' THEN 'BFZU'
+        WHEN department = '益阳' THEN 'BFYY'
+        WHEN department = '怀化' THEN 'BFHW'
+        WHEN department = '岳阳' THEN 'BFUY'
+        WHEN department = '邵阳' THEN 'BFSB'
+        WHEN department = '衡阳' THEN 'BFHA'
+        WHEN department = '常德' THEN 'BFCA'
+        WHEN department = '郴州' THEN 'BFCE'
+        WHEN department = '长沙' THEN 'BFCS'
+        WHEN department = '娄底' THEN 'BFLD' END wfsrc,
+        CAST ( to_char( inputtime + '8 hour', 'yyyymmddhh24mi' ) AS BIGINT ) wfdatetime
+        FROM
+        public_dishi.tb_smpf_forecastdataindex
+        WHERE
+        inputtime BETWEEN to_timestamp( #{gridStart} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+        AND to_timestamp( #{gridEnd} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+        AND forecaster != ''
+        AND department != '湖南省'
+        GROUP BY
+        forecaster,
+        department,
+        inputtime
+        ORDER BY
+        forecaster
+        ) t1
+        LEFT JOIN ( SELECT * FROM public_dishi.tb_score_day_pre WHERE wfhour IN
+        <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+            CAST(#{item} AS INTEGER)
+        </foreach>
+        AND "type" = 'S1912' ) t2 ON t1.wfdatetime = t2.wfdatetime
+        AND t1.wfsrc = t2.wfsrc
+        LEFT JOIN (
+        SELECT
+        wfsrc,
+        wfdatetime,
+        mae_total mintmae,
+        ok2 mintok2,
+        total minttotal
+        FROM
+        public_dishi.tb_score_day_tem
+        WHERE
+        wfhour IN
+        <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+            CAST(#{item} AS INTEGER)
+        </foreach>
+        AND "type" = 'S1912'
+        AND facname = 'TMIN'
+        ) t3 ON t1.wfdatetime = t3.wfdatetime
+        AND t1.wfsrc = t3.wfsrc
+        LEFT JOIN (
+        SELECT
+        wfsrc,
+        wfdatetime,
+        mae_total maxtmae,
+        ok2 maxtok2,
+        total maxttotal
+        FROM
+        public_dishi.tb_score_day_tem
+        WHERE
+        wfhour IN
+        <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+            CAST(#{item} AS INTEGER)
+        </foreach>
+        AND "type" = 'S1912'
+        AND facname = 'TMAX'
+        ) t4 ON t1.wfdatetime = t4.wfdatetime
+        AND t1.wfsrc = t4.wfsrc
+        ) t1
+        GROUP BY
+        forecaster,
+        department
+        ) t1 LEFT JOIN (
+        SELECT
+        t1.*,
+        t2.avgbc
+        FROM
+        (SELECT
+        forecaster,
+        department,
+        count(1) bc
+        FROM
+        public_dishi.tb_smpf_forecastdataindex
+        WHERE
+        inputtime BETWEEN to_timestamp( #{bcStart} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+        AND to_timestamp( #{bcEnd} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+        AND forecaster != ''
+        AND department != '湖南省'
+        GROUP BY
+        forecaster,
+        department) t1
+        LEFT JOIN
+        (SELECT
+        department,
+        round(avg(bc) * (2.0 / 3)) avgbc
+        FROM
+        (
+        SELECT
+        department,
+        count(forecaster) bc
+        FROM
+        public_dishi.tb_smpf_forecastdataindex
+        WHERE
+        inputtime BETWEEN to_timestamp( #{bcStart} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+        AND to_timestamp( #{bcEnd} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+        AND forecaster != ''
+        AND department != '湖南省'
+        GROUP BY
+        forecaster,
+        department
+        ) t1 GROUP BY department) t2
+        ON t1.department = t2.department
+        ) t2 ON t1.forecaster = t2.forecaster
+        AND t1.department = t2.department
+    </select>
+
+    <select id="getForecasterScoreSt" resultType="java.util.Map">
+        SELECT
+            t1.*,
+            t2.bc
+        FROM
+        (
+        SELECT
+            forecaster,
+            department,
+            CASE
+            WHEN SUM ( total ) = 0 THEN
+            NULL ELSE SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total )
+            END qyzql,
+            CASE
+            WHEN SUM ( total - pc_nd ) = 0 THEN
+            NULL ELSE SUM ( pc_na ) * 100.0 / SUM ( total - pc_nd )
+            END qyts,
+            CASE
+            WHEN SUM ( ybx1_na + ybx1_nb + ybx1_nc ) = 0 THEN
+            NULL ELSE SUM ( ybx1_na ) * 100.0 / SUM ( ybx1_na + ybx1_nb + ybx1_nc )
+            END genzql,
+            CASE
+            WHEN SUM ( ybx2_na + ybx2_nb + ybx2_nc ) = 0 THEN
+            NULL ELSE SUM ( ybx2_na ) * 100.0 / SUM ( ybx2_na + ybx2_nb + ybx2_nc )
+            END stormzql,
+            CASE
+            WHEN SUM ( fj1_na + fj1_nb + fj1_nc ) = 0 THEN
+            NULL ELSE SUM ( fj1_na ) * 100.0 / SUM ( fj1_na + fj1_nb + fj1_nc )
+            END fj1zql,
+            CASE
+            WHEN SUM ( fj2_na + fj2_nb + fj2_nc ) = 0 THEN
+            NULL ELSE SUM ( fj2_na ) * 100.0 / SUM ( fj2_na + fj2_nb + fj2_nc )
+            END fj2zql,
+            CASE
+            WHEN SUM ( fj3_na + fj3_nb + fj3_nc ) = 0 THEN
+            NULL ELSE SUM ( fj3_na ) * 100.0 / SUM ( fj3_na + fj3_nb + fj3_nc )
+            END fj3zql,
+            CASE
+            WHEN SUM ( fj4_na + fj4_nb + fj4_nc ) = 0 THEN
+            NULL ELSE SUM ( fj4_na ) * 100.0 / SUM ( fj4_na + fj4_nb + fj4_nc )
+            END fj4zql,
+            CASE
+            WHEN SUM ( fj5_na + fj5_nb + fj5_nc ) = 0 THEN
+            NULL ELSE SUM ( fj5_na ) * 100.0 / SUM ( fj5_na + fj5_nb + fj5_nc )
+            END fj5zql,
+            CASE
+            WHEN SUM ( fj6_na + fj6_nb + fj6_nc ) = 0 THEN
+            NULL ELSE SUM ( fj6_na ) * 100.0 / SUM ( fj6_na + fj6_nb + fj6_nc )
+            END fj6zql,
+            CASE
+            WHEN SUM ( lj1_na + lj1_nb + lj1_nc ) = 0 THEN
+            NULL ELSE SUM ( lj1_na ) * 100.0 / SUM ( lj1_na + lj1_nb + lj1_nc )
+            END ljo1zql,
+            CASE
+            WHEN SUM ( lj2_na + lj2_nb + lj2_nc ) = 0 THEN
+            NULL ELSE SUM ( lj2_na ) * 100.0 / SUM ( lj2_na + lj2_nb + lj2_nc )
+            END ljo2zql,
+            CASE
+            WHEN SUM ( lj3_na + lj3_nb + lj3_nc ) = 0 THEN
+            NULL ELSE SUM ( lj3_na ) * 100.0 / SUM ( lj3_na + lj3_nb + lj3_nc )
+            END ljo3zql,
+            CASE
+            WHEN SUM ( lj4_na + lj4_nb + lj4_nc ) = 0 THEN
+            NULL ELSE SUM ( lj4_na ) * 100.0 / SUM ( lj4_na + lj4_nb + lj4_nc )
+            END ljo4zql,
+            CASE
+            WHEN SUM ( lj5_na + lj5_nb + lj5_nc ) = 0 THEN
+            NULL ELSE SUM ( lj5_na ) * 100.0 / SUM ( lj5_na + lj5_nb + lj5_nc )
+            END ljo5zql,
+            CASE
+            WHEN SUM ( lj6_na + lj6_nb + lj6_nc ) = 0 THEN
+            NULL ELSE SUM ( lj6_na ) * 100.0 / SUM ( lj6_na + lj6_nb + lj6_nc )
+            END ljo6zql,
+            SUM ( mintok2 ) * 100.0 / SUM ( minttotal ) mint,
+            SUM ( mintmae ) / SUM ( minttotal ) tminmae,
+            SUM ( maxtok2 ) * 100.0 / SUM ( maxttotal ) maxt,
+            SUM ( maxtmae ) / SUM ( maxttotal ) tmaxmae
+        FROM
+            (
+                SELECT
+                  *
+                FROM
+                (
+                    SELECT
+                        forecaster,
+                        department,
+                        CASE WHEN department = '湘潭' THEN 'BFXK'
+                        WHEN department = '吉首' THEN 'BFJO'
+                        WHEN department = '张家界' THEN 'BFDA'
+                        WHEN department = '永州' THEN 'BFYE'
+                        WHEN department = '株洲' THEN 'BFZU'
+                        WHEN department = '益阳' THEN 'BFYY'
+                        WHEN department = '怀化' THEN 'BFHW'
+                        WHEN department = '岳阳' THEN 'BFUY'
+                        WHEN department = '邵阳' THEN 'BFSB'
+                        WHEN department = '衡阳' THEN 'BFHA'
+                        WHEN department = '常德' THEN 'BFCA'
+                        WHEN department = '郴州' THEN 'BFCE'
+                        WHEN department = '长沙' THEN 'BFCS'
+                        WHEN department = '娄底' THEN 'BFLD' END wfsrc,
+                        CAST ( to_char( inputtime + '8 hour', 'yyyymmddhh24mi' ) AS BIGINT ) wfdatetime
+                    FROM
+                        public_dishi.tb_smpf_forecastdataindex
+                    WHERE
+                        inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND forecaster != ''
+                        AND department != '湖南省'
+                    GROUP BY
+                        forecaster,
+                        department,
+                        inputtime
+                    ORDER BY
+                        forecaster
+                ) t1
+                LEFT JOIN ( SELECT * FROM public_dishi.tb_score_day_pre_st WHERE wfhour IN
+                    <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                        CAST(#{item} AS INTEGER)
+                    </foreach>
+                    AND "type" = 'S1912' ) t2 ON t1.wfdatetime = t2.wfdatetime
+                    AND t1.wfsrc = t2.wfsrc
+                LEFT JOIN (
+                    SELECT
+                        wfsrc,
+                        wfdatetime,
+                        mae_total mintmae,
+                        ok2 mintok2,
+                        total minttotal
+                    FROM
+                        public_dishi.tb_score_day_tem_st
+                    WHERE
+                        wfhour IN
+                        <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                            CAST(#{item} AS INTEGER)
+                        </foreach>
+                        AND "type" = 'S1912'
+                        AND facname = 'TMIN'
+                ) t3 ON t1.wfdatetime = t3.wfdatetime
+                AND t1.wfsrc = t3.wfsrc
+                LEFT JOIN (
+                    SELECT
+                        wfsrc,
+                        wfdatetime,
+                        mae_total maxtmae,
+                        ok2 maxtok2,
+                        total maxttotal
+                    FROM
+                        public_dishi.tb_score_day_tem_st
+                    WHERE
+                        wfhour IN
+                        <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                            CAST(#{item} AS INTEGER)
+                        </foreach>
+                        AND "type" = 'S1912'
+                        AND facname = 'TMAX'
+                ) t4 ON t1.wfdatetime = t4.wfdatetime
+                AND t1.wfsrc = t4.wfsrc
+            ) t1
+        GROUP BY
+            forecaster,
+            department
+        ) t1 LEFT JOIN (
+            SELECT
+                forecaster,
+                department,
+                count(1) bc
+            FROM
+                public_dishi.tb_smpf_forecastdataindex
+            WHERE
+                inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                AND forecaster != ''
+                AND department != '湖南省'
+            GROUP BY
+                forecaster,
+                department
+            ) t2 ON t1.forecaster = t2.forecaster
+            AND t1.department = t2.department
+    </select>
+
+    <select id="getForecasterScoreSt2" resultType="java.util.Map">
+        SELECT
+        t1.*,
+        t2.bc
+        FROM
+        (
+        SELECT
+        forecaster,
+        department,
+        CASE
+        WHEN SUM ( total ) = 0 THEN
+        NULL ELSE SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total )
+        END qyzql,
+        CASE
+        WHEN SUM ( total - pc_nd ) = 0 THEN
+        NULL ELSE SUM ( pc_na ) * 100.0 / SUM ( total - pc_nd )
+        END qyts,
+        CASE
+        WHEN SUM ( ybx1_na + ybx1_nb + ybx1_nc ) = 0 THEN
+        NULL ELSE SUM ( ybx1_na ) * 100.0 / SUM ( ybx1_na + ybx1_nb + ybx1_nc )
+        END genzql,
+        CASE
+        WHEN SUM ( ybx2_na + ybx2_nb + ybx2_nc ) = 0 THEN
+        NULL ELSE SUM ( ybx2_na ) * 100.0 / SUM ( ybx2_na + ybx2_nb + ybx2_nc )
+        END stormzql,
+        CASE
+        WHEN SUM ( fj1_na + fj1_nb + fj1_nc ) = 0 THEN
+        NULL ELSE SUM ( fj1_na ) * 100.0 / SUM ( fj1_na + fj1_nb + fj1_nc )
+        END fj1zql,
+        CASE
+        WHEN SUM ( fj2_na + fj2_nb + fj2_nc ) = 0 THEN
+        NULL ELSE SUM ( fj2_na ) * 100.0 / SUM ( fj2_na + fj2_nb + fj2_nc )
+        END fj2zql,
+        CASE
+        WHEN SUM ( fj3_na + fj3_nb + fj3_nc ) = 0 THEN
+        NULL ELSE SUM ( fj3_na ) * 100.0 / SUM ( fj3_na + fj3_nb + fj3_nc )
+        END fj3zql,
+        CASE
+        WHEN SUM ( fj4_na + fj4_nb + fj4_nc ) = 0 THEN
+        NULL ELSE SUM ( fj4_na ) * 100.0 / SUM ( fj4_na + fj4_nb + fj4_nc )
+        END fj4zql,
+        CASE
+        WHEN SUM ( fj5_na + fj5_nb + fj5_nc ) = 0 THEN
+        NULL ELSE SUM ( fj5_na ) * 100.0 / SUM ( fj5_na + fj5_nb + fj5_nc )
+        END fj5zql,
+        CASE
+        WHEN SUM ( fj6_na + fj6_nb + fj6_nc ) = 0 THEN
+        NULL ELSE SUM ( fj6_na ) * 100.0 / SUM ( fj6_na + fj6_nb + fj6_nc )
+        END fj6zql,
+        CASE
+        WHEN SUM ( lj1_na + lj1_nb + lj1_nc ) = 0 THEN
+        NULL ELSE SUM ( lj1_na ) * 100.0 / SUM ( lj1_na + lj1_nb + lj1_nc )
+        END ljo1zql,
+        CASE
+        WHEN SUM ( lj2_na + lj2_nb + lj2_nc ) = 0 THEN
+        NULL ELSE SUM ( lj2_na ) * 100.0 / SUM ( lj2_na + lj2_nb + lj2_nc )
+        END ljo2zql,
+        CASE
+        WHEN SUM ( lj3_na + lj3_nb + lj3_nc ) = 0 THEN
+        NULL ELSE SUM ( lj3_na ) * 100.0 / SUM ( lj3_na + lj3_nb + lj3_nc )
+        END ljo3zql,
+        CASE
+        WHEN SUM ( lj4_na + lj4_nb + lj4_nc ) = 0 THEN
+        NULL ELSE SUM ( lj4_na ) * 100.0 / SUM ( lj4_na + lj4_nb + lj4_nc )
+        END ljo4zql,
+        CASE
+        WHEN SUM ( lj5_na + lj5_nb + lj5_nc ) = 0 THEN
+        NULL ELSE SUM ( lj5_na ) * 100.0 / SUM ( lj5_na + lj5_nb + lj5_nc )
+        END ljo5zql,
+        CASE
+        WHEN SUM ( lj6_na + lj6_nb + lj6_nc ) = 0 THEN
+        NULL ELSE SUM ( lj6_na ) * 100.0 / SUM ( lj6_na + lj6_nb + lj6_nc )
+        END ljo6zql,
+        SUM ( mintok2 ) * 100.0 / SUM ( minttotal ) mint,
+        SUM ( mintmae ) / SUM ( minttotal ) tminmae,
+        SUM ( maxtok2 ) * 100.0 / SUM ( maxttotal ) maxt,
+        SUM ( maxtmae ) / SUM ( maxttotal ) tmaxmae
+        FROM
+        (
+        SELECT
+        *
+        FROM
+        (
+        SELECT
+        forecaster,
+        department,
+        CASE WHEN department = '湘潭' THEN 'BFXK'
+        WHEN department = '吉首' THEN 'BFJO'
+        WHEN department = '张家界' THEN 'BFDA'
+        WHEN department = '永州' THEN 'BFYE'
+        WHEN department = '株洲' THEN 'BFZU'
+        WHEN department = '益阳' THEN 'BFYY'
+        WHEN department = '怀化' THEN 'BFHW'
+        WHEN department = '岳阳' THEN 'BFUY'
+        WHEN department = '邵阳' THEN 'BFSB'
+        WHEN department = '衡阳' THEN 'BFHA'
+        WHEN department = '常德' THEN 'BFCA'
+        WHEN department = '郴州' THEN 'BFCE'
+        WHEN department = '长沙' THEN 'BFCS'
+        WHEN department = '娄底' THEN 'BFLD' END wfsrc,
+        CAST ( to_char( inputtime + '8 hour', 'yyyymmddhh24mi' ) AS BIGINT ) wfdatetime
+        FROM
+        public_dishi.tb_smpf_forecastdataindex
+        WHERE
+        inputtime BETWEEN to_timestamp( #{gridStart} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+        AND to_timestamp( #{gridEnd} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+        AND forecaster != ''
+        AND department != '湖南省'
+        GROUP BY
+        forecaster,
+        department,
+        inputtime
+        ORDER BY
+        forecaster
+        ) t1
+        LEFT JOIN ( SELECT * FROM public_dishi.tb_score_day_pre_st WHERE wfhour IN
+        <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+            CAST(#{item} AS INTEGER)
+        </foreach>
+        AND "type" = 'S1912' ) t2 ON t1.wfdatetime = t2.wfdatetime
+        AND t1.wfsrc = t2.wfsrc
+        LEFT JOIN (
+        SELECT
+        wfsrc,
+        wfdatetime,
+        mae_total mintmae,
+        ok2 mintok2,
+        total minttotal
+        FROM
+        public_dishi.tb_score_day_tem_st
+        WHERE
+        wfhour IN
+        <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+            CAST(#{item} AS INTEGER)
+        </foreach>
+        AND "type" = 'S1912'
+        AND facname = 'TMIN'
+        ) t3 ON t1.wfdatetime = t3.wfdatetime
+        AND t1.wfsrc = t3.wfsrc
+        LEFT JOIN (
+        SELECT
+        wfsrc,
+        wfdatetime,
+        mae_total maxtmae,
+        ok2 maxtok2,
+        total maxttotal
+        FROM
+        public_dishi.tb_score_day_tem_st
+        WHERE
+        wfhour IN
+        <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+            CAST(#{item} AS INTEGER)
+        </foreach>
+        AND "type" = 'S1912'
+        AND facname = 'TMAX'
+        ) t4 ON t1.wfdatetime = t4.wfdatetime
+        AND t1.wfsrc = t4.wfsrc
+        ) t1
+        GROUP BY
+        forecaster,
+        department
+        ) t1 LEFT JOIN (
+        SELECT
+        forecaster,
+        department,
+        count(1) bc
+        FROM
+        public_dishi.tb_smpf_forecastdataindex
+        WHERE
+        inputtime BETWEEN to_timestamp( #{bcStart} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+        AND to_timestamp( #{bcEnd} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+        AND forecaster != ''
+        AND department != '湖南省'
+        GROUP BY
+        forecaster,
+        department
+        ) t2 ON t1.forecaster = t2.forecaster
+        AND t1.department = t2.department
+    </select>
+
+    <select id="getForecasterWarningZh" resultType="java.util.Map">
+        SELECT
+            CASE WHEN area = '邵阳市' THEN '邵阳'
+            WHEN area = '张家界市' THEN '张家界'
+            WHEN area = '益阳市' THEN '益阳'
+            WHEN area = '怀化市' THEN '怀化'
+            WHEN area = '郴州市' THEN '郴州'
+            WHEN area = '衡阳市' THEN '衡阳'
+            WHEN area = '永州市' THEN '永州'
+            WHEN area = '岳阳市' THEN '岳阳'
+            WHEN area = '株洲市' THEN '株洲'
+            WHEN area = '湘西州' THEN '吉首'
+            WHEN area = '湘潭市' THEN '湘潭'
+            WHEN area = '长沙市' THEN '长沙'
+            WHEN area = '常德市' THEN '常德'
+            WHEN area = '娄底市' THEN '娄底' END area,
+            forecaster,
+            CASE WHEN sum(count) = 0 THEN -999.0 ELSE
+            ROUND( CAST ( SUM ( ts * typeweights ) / SUM ( COUNT ) AS NUMERIC ), 3 ) END zh
+        FROM
+            (
+                SELECT
+                    area,
+                    forecaster,
+                    warningtype,
+                    SUM ( ts * levelweights ) / SUM ( COUNT ) ts,
+                    CASE
+                        WHEN warningtype = '暴雨' THEN 1.5
+                        WHEN warningtype = '暴雪' THEN 1.5
+                        WHEN warningtype = '大风' THEN 1
+                        WHEN warningtype = '大雾' THEN 1
+                        WHEN warningtype = '霾' THEN 1
+                        WHEN warningtype = '雷电' THEN 1
+                        WHEN warningtype = '冰雹' THEN 1.5
+                        WHEN warningtype = '雷雨大风' THEN 1.5
+                    END typeweights,
+                    CASE
+                        WHEN SUM ( ts * levelweights ) / SUM ( COUNT ) IS NULL THEN
+                        0 ELSE 1
+                    END COUNT
+                FROM
+                (
+                    SELECT
+                        area,
+                        forecaster,
+                        warningtype,
+                        "level",
+                    CASE
+                        WHEN na + nb + nc = 0 THEN
+                        NULL ELSE na * 100 / ( na + nb + nc )
+                    END ts,
+                    CASE
+                        WHEN LEVEL = '红色' THEN 1.8
+                        WHEN LEVEL = '橙色' THEN 1.5
+                        WHEN LEVEL = '黄色' THEN 1.2
+                        WHEN LEVEL = '蓝色' THEN 1
+                    END levelweights,
+                    CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1 END COUNT
+                FROM
+                    (
+                        SELECT
+                            area,
+                            forecaster,
+                            warningtype,
+                            test_level "level",
+                            SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,
+                            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+                            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+                        FROM
+                            PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+                        WHERE
+                            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND warningtype != ''
+                            AND department != '湖南省气象台'
+							AND forecaster NOT LIKE '%气象台'
+                        GROUP BY
+                            area,
+                            forecaster,
+                            warningtype,
+                            test_level
+                    ) rs
+                ) rs
+                GROUP BY
+                    area,
+                    forecaster,
+                    warningtype
+            ) rs
+        GROUP BY
+            area,
+            forecaster
+    </select>
+</mapper>

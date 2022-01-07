@@ -1,0 +1,2855 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.galaxy.score.mapper.ShortApproachMapper">
+
+    <select id="getProvincialAll" resultType="java.util.Map">
+        SELECT
+            forecaster,
+            <choose>
+                <when test="method == 'all'">
+                    '所有级别' "level",
+                </when>
+                <otherwise>
+                    '不分级别' "level",
+                </otherwise>
+            </choose>
+            na,
+            nb,
+            nc,
+            ( na + nb + nc ) total,
+            case when na + nb + nc = 0 THEN NULL ELSE
+            round(na * 100.0 / (na + nb + nc), 2) END ts,
+            case (na + nc) when 0 then 0
+            else ROUND( na * 100.0 / ( na + nc ), 2 ) end pod,
+            case (na + nc) when 0 then 0
+            else ROUND( nc * 100.0 / ( na + nc ), 2 ) end po,
+            case (na + nb) when 0 then 0
+            else ROUND( nb * 100.0 / ( na + nb  ), 2 ) end far,
+            case (na ) when 0 then 0
+            else ROUND( leadtime / na, 2  ) end t1,
+            case ( na + nc ) when 0 then 0
+            else ROUND( leadtime / ( na + nc ), 2  ) end t2,
+            case ( na + nb + nc ) when 0 then 0
+            else ROUND( leadtime / ( na + nb + nc ), 2  ) end t3
+        FROM
+        (
+            SELECT
+                '湖南省' forecaster,
+                <choose>
+                    <when test="method == 'all'">
+                        SUM (CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime,
+                        sum(CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END) na,
+                        sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                    </when>
+                    <otherwise>
+                        SUM (CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END) leadtime,
+                        sum(CASE WHEN warningp_bfj = 'NA' THEN 1 ELSE 0 END) na,
+                        sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                    </otherwise>
+                </choose>
+            FROM
+                "tb_smpf_obtwarningsignalscore"
+            WHERE
+                inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                AND warningtype = #{warningType}
+                <if test="warningType == '暴雨'">
+                    AND isfore = '0'
+                </if>
+                AND forecaster != ''
+            UNION ALL
+            SELECT
+                forecaster,
+                <choose>
+                    <when test="method == 'all'">
+                        SUM (CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime,
+                        sum(CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END) na,
+                        sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                    </when>
+                    <otherwise>
+                        SUM (CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END) leadtime,
+                        sum(CASE WHEN warningp_bfj = 'NA' THEN 1 ELSE 0 END) na,
+                        sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                    </otherwise>
+                </choose>
+            FROM
+                "tb_smpf_obtwarningsignalscore"
+            WHERE
+                inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                AND warningtype = #{warningType}
+                <if test="warningType == '暴雨'">
+                    AND isfore = '1'
+                </if>
+                AND forecaster != ''
+            GROUP BY
+                forecaster
+        ) t1
+    </select>
+
+    <select id="getProvincialAllZh" resultType="java.util.Map">
+        SELECT
+            forecaster,
+            <choose>
+                <when test="method == 'all'">
+                    '所有级别' "level",
+                </when>
+                <otherwise>
+                    '不分级别' "level",
+                </otherwise>
+            </choose>
+            na,
+            nb,
+            nc,
+            ( na + nb + nc ) total,
+            case when na + nb + nc = 0 THEN NULL ELSE
+            round(CAST(na * 100.0 / (na + nb + nc) AS NUMERIC), 2) END zh
+        FROM
+        (
+            SELECT
+                '湖南省' forecaster,
+                <choose>
+                    <when test="method == 'all'">
+                        sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na,
+                        sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                    </when>
+                    <otherwise>
+                        sum(CASE WHEN warningp_bfj = 'NA' THEN 1 * warningp_score_bfj ELSE 0 END) na,
+                        sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                    </otherwise>
+                </choose>
+            FROM
+              "tb_smpf_obtwarningsignalscore"
+            WHERE
+                inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                AND warningtype = #{warningType}
+                <if test="warningType == '暴雨'">
+                    AND isfore = '0'
+                </if>
+                AND forecaster != ''
+            UNION ALL
+            SELECT
+                forecaster,
+                <choose>
+                    <when test="method == 'all'">
+                        sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na,
+                        sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                    </when>
+                    <otherwise>
+                        sum(CASE WHEN warningp_bfj = 'NA' THEN 1 * warningp_score_bfj ELSE 0 END) na,
+                        sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                    </otherwise>
+                </choose>
+            FROM
+              "tb_smpf_obtwarningsignalscore"
+            WHERE
+                inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                AND warningtype = #{warningType}
+                <if test="warningType == '暴雨'">
+                    AND isfore = '1'
+                </if>
+                AND forecaster != ''
+            GROUP BY
+                forecaster
+        ) t1
+    </select>
+
+    <select id="getProvincialAllByType" resultType="java.util.Map">
+        SELECT
+            forecaster,
+            <choose>
+                <when test="method == 'all'">2
+                    '所有级别' "level",
+                </when>
+                <otherwise>
+                    '不分级别' "level",
+                </otherwise>
+            </choose>
+            round(CAST(sum(ts * typeweights) / sum(tscount) AS NUMERIC), 2) ts,
+            round(CAST(avg(far) AS NUMERIC), 2) far,
+            round(CAST(avg(po) AS NUMERIC), 2) po,
+            round(CAST(avg(pod) AS NUMERIC), 2) pod,
+            round(CAST(sum(t1 * typeweights) / sum(t1count) AS NUMERIC), 2) t1,
+            round(CAST(sum(t2 * typeweights) / sum(t2count) AS NUMERIC), 2) t2,
+            round(CAST(sum(t3 * typeweights) / sum(t3count) AS NUMERIC), 2) t3
+        FROM
+        (
+            SELECT
+                forecaster,
+                warningtype,
+                CASE WHEN na + nb + nc = 0 THEN NULL ELSE
+                na * 100.0 / (na + nb + nc) END ts,
+                CASE WHEN na + nb = 0 THEN NULL ELSE
+                nb * 100.0 / (na + nb) END far,
+                CASE WHEN na + nc = 0 THEN NULL ELSE
+                nc * 100.0 / (na + nc) END po,
+                CASE WHEN na + nc = 0 THEN NULL ELSE
+                na * 100.0 / (na + nc) END pod,
+                CASE WHEN na = 0 THEN NULL ELSE
+                leadtime / na END t1,
+                CASE WHEN na + nc = 0 THEN NULL ELSE
+                leadtime / (na + nc) END t2,
+                CASE WHEN na + nb + nc = 0 THEN NULL ELSE
+                leadtime / (na + nb + nc) END t3,
+                CASE
+                    WHEN warningtype = '暴雨' THEN 1.5
+                    WHEN warningtype = '暴雪' THEN 1.5
+                    WHEN warningtype = '大风' THEN 1
+                    WHEN warningtype = '大雾' THEN 1
+                    WHEN warningtype = '霾' THEN 1
+                    WHEN warningtype = '雷电' THEN 1
+                    WHEN warningtype = '冰雹' THEN 1.5
+                    WHEN warningtype = '雷雨大风' THEN 1.5
+                END typeweights,
+                CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1 END tscount,
+                case when na = 0 THEN 0 ELSE 1 END t1count,
+                case when na + nc = 0 THEN 0 ELSE 1 END t2count,
+                case when na + nb + nc = 0 THEN 0 ELSE 1 END t3count
+            FROM
+            (
+                SELECT
+                    '湖南省' forecaster,
+                    warningtype,
+                    <choose>
+                        <when test="method == 'all'">
+                            SUM (CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime,
+                            sum(CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END) na,
+                            sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                        </when>
+                        <otherwise>
+                            SUM (CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END) leadtime,
+                            sum(CASE WHEN warningp_bfj = 'NA' THEN 1 ELSE 0 END) na,
+                            sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                        </otherwise>
+                    </choose>
+                FROM
+                    tb_smpf_obtwarningsignalscore
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND warningtype != '暴雨'
+                    AND forecaster != ''
+                GROUP BY
+                    warningtype
+                UNION ALL
+                SELECT
+                    '湖南省' forecaster,
+                    warningtype,
+                <choose>
+                    <when test="method == 'all'">
+                        SUM (CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime,
+                        sum(CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END) na,
+                        sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                    </when>
+                    <otherwise>
+                        SUM (CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END) leadtime,
+                        sum(CASE WHEN warningp_bfj = 'NA' THEN 1 ELSE 0 END) na,
+                        sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                    </otherwise>
+                </choose>
+                FROM
+                    tb_smpf_obtwarningsignalscore
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND warningtype = '暴雨'
+                    AND isfore = '0'
+                    AND forecaster != ''
+                GROUP BY
+                    warningtype
+                UNION ALL
+                SELECT
+                    forecaster,
+                    warningtype,
+                    <choose>
+                        <when test="method == 'all'">
+                            SUM (CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime,
+                            sum(CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END) na,
+                            sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                        </when>
+                        <otherwise>
+                            SUM (CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END) leadtime,
+                            sum(CASE WHEN warningp_bfj = 'NA' THEN 1 ELSE 0 END) na,
+                            sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                        </otherwise>
+                    </choose>
+                FROM
+                    tb_smpf_obtwarningsignalscore
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND warningtype != '暴雨'
+                    AND forecaster != ''
+                GROUP BY
+                    forecaster,
+                    warningtype
+                UNION ALL
+                SELECT
+                    forecaster,
+                    warningtype,
+                    <choose>
+                        <when test="method == 'all'">
+                            SUM (CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime,
+                            sum(CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END) na,
+                            sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                        </when>
+                        <otherwise>
+                            SUM (CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END) leadtime,
+                            sum(CASE WHEN warningp_bfj = 'NA' THEN 1 ELSE 0 END) na,
+                            sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                        </otherwise>
+                    </choose>
+                FROM
+                    tb_smpf_obtwarningsignalscore
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND warningtype = '暴雨'
+                    AND isfore = '1'
+                    AND forecaster != ''
+                GROUP BY
+                    forecaster,
+                    warningtype
+            ) t1
+        ) t1 GROUP BY forecaster
+    </select>
+
+    <select id="getProvincialAllZhByType" resultType="java.util.Map">
+        SELECT
+            forecaster,
+            <choose>
+                <when test="method == 'all'">
+                    '所有级别' "level",
+                </when>
+                <otherwise>
+                    '不分级别' "level",
+                </otherwise>
+            </choose>
+            round(CAST(sum(zh * typeweights) / sum(zhcount) AS NUMERIC), 2) zh
+        FROM
+        (
+            SELECT
+                forecaster,
+                warningtype,
+                CASE WHEN na + nb + nc = 0 THEN NULL ELSE
+                na * 100.0 / (na + nb + nc) END zh,
+                CASE
+                    WHEN warningtype = '暴雨' THEN 1.5
+                    WHEN warningtype = '暴雪' THEN 1.5
+                    WHEN warningtype = '大风' THEN 1
+                    WHEN warningtype = '大雾' THEN 1
+                    WHEN warningtype = '霾' THEN 1
+                    WHEN warningtype = '雷电' THEN 1
+                    WHEN warningtype = '冰雹' THEN 1.5
+                    WHEN warningtype = '雷雨大风' THEN 1.5
+                END typeweights,
+                CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1 END zhcount
+            FROM
+            (
+                SELECT
+                    '湖南省' forecaster,
+                    warningtype,
+                    <choose>
+                        <when test="method == 'all'">
+                            sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na,
+                            sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                        </when>
+                        <otherwise>
+                            sum(CASE WHEN warningp_bfj = 'NA' THEN 1 * warningp_score_bfj ELSE 0 END) na,
+                            sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                        </otherwise>
+                    </choose>
+                FROM
+                  tb_smpf_obtwarningsignalscore
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND warningtype != '暴雨'
+                    AND forecaster != ''
+                GROUP BY
+                  warningtype
+                UNION ALL
+                SELECT
+                    '湖南省' forecaster,
+                    warningtype,
+                    <choose>
+                        <when test="method == 'all'">
+                            sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na,
+                            sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                        </when>
+                        <otherwise>
+                            sum(CASE WHEN warningp_bfj = 'NA' THEN 1 * warningp_score_bfj ELSE 0 END) na,
+                            sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                        </otherwise>
+                    </choose>
+                FROM
+                  tb_smpf_obtwarningsignalscore
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND warningtype = '暴雨'
+                    AND isfore = '0'
+                    AND forecaster != ''
+                GROUP BY
+                    warningtype
+                UNION ALL
+                SELECT
+                    forecaster,
+                    warningtype,
+                    <choose>
+                        <when test="method == 'all'">
+                            sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na,
+                            sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                        </when>
+                        <otherwise>
+                            sum(CASE WHEN warningp_bfj = 'NA' THEN 1 * warningp_score_bfj ELSE 0 END) na,
+                            sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                        </otherwise>
+                    </choose>
+                FROM
+                    tb_smpf_obtwarningsignalscore
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND warningtype != '暴雨'
+                    AND forecaster != ''
+                GROUP BY
+                    forecaster,
+                    warningtype
+                UNION ALL
+                SELECT
+                    forecaster,
+                    warningtype,
+                    <choose>
+                        <when test="method == 'all'">
+                            sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na,
+                            sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                        </when>
+                        <otherwise>
+                            sum(CASE WHEN warningp_bfj = 'NA' THEN 1 * warningp_score_bfj ELSE 0 END) na,
+                            sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                            sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                        </otherwise>
+                    </choose>
+                FROM
+                    tb_smpf_obtwarningsignalscore
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND warningtype = '暴雨'
+                    AND isfore = '1'
+                    AND forecaster != ''
+                GROUP BY
+                    forecaster,
+                    warningtype
+            ) t1
+        ) t1 GROUP BY forecaster
+    </select>
+
+    <select id="getProvincialFj" resultType="java.util.Map">
+        SELECT
+            forecaster,
+            "level",
+            CASE WHEN na + nb + nc = 0 THEN NULL ELSE
+            round(na * 100.0 / (na + nb + nc), 2) END ts,
+            CASE WHEN na + nb = 0 THEN NULL ELSE
+            round(nb * 100.0 / (na + nb), 2) END far,
+            CASE WHEN na + nc = 0 THEN NULL ELSE
+            round(nc * 100.0 / (na + nc), 2) END po,
+            CASE WHEN na + nc = 0 THEN NULL ELSE
+            round(na * 100.0 / (na + nc), 2) END pod,
+            CASE WHEN na = 0 THEN NULL ELSE
+            round(leadtime / na, 2) END t1,
+            CASE WHEN na + nc = 0 THEN NULL ELSE
+            round(leadtime / (na + nc), 2) END t2,
+            CASE WHEN na + nb + nc = 0 THEN NULL ELSE
+            round(leadtime / (na + nb + nc), 2) END t3
+        FROM
+        (
+            SELECT
+                '湖南省' forecaster,
+                test_level "level",
+                sum(CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END) na,
+                sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc,
+                sum(CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime
+            FROM
+                tb_smpf_obtwarningsignalscore
+            WHERE
+                inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                AND warningtype = #{warningType}
+                <if test="warningType == '暴雨'">
+                    AND isfore = '0'
+                </if>
+                AND forecaster != ''
+            GROUP BY
+                test_level
+            UNION ALL
+            SELECT
+                forecaster,
+                test_level "level",
+                sum(CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END) na,
+                sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc,
+                sum(CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime
+            FROM
+                tb_smpf_obtwarningsignalscore
+            WHERE
+                inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                AND warningtype = #{warningType}
+                <if test="warningType == '暴雨'">
+                    AND isfore = '1'
+                </if>
+                AND forecaster != ''
+            GROUP BY
+                forecaster,
+                test_level
+        ) t1
+    </select>
+
+    <select id="getProvincialFjZhByLevel" resultType="java.util.Map">
+        SELECT
+            '湖南省' forecaster,
+            CASE
+                WHEN SUM ( tscount ) = 0 THEN
+                NULL ELSE round( CAST ( SUM ( ts * levelweights ) / SUM ( tscount ) AS NUMERIC ), 2 )
+            END zh
+        FROM
+            (
+                SELECT
+                    "level",
+                    CASE
+                        WHEN na + nb + nc = 0 THEN
+                        NULL ELSE na * 100.0 / ( na + nb + nc )
+                    END ts,
+                    CASE
+                        WHEN "level" = '红色' THEN
+                        1.8
+                        WHEN "level" = '橙色' THEN
+                        1.5
+                        WHEN "level" = '黄色' THEN
+                        1.2
+                        WHEN "level" = '蓝色' THEN
+                        1
+                    END levelweights,
+                    CASE
+                        WHEN na + nb + nc = 0 THEN
+                        0 ELSE 1.0
+                    END tscount
+            FROM
+                (
+                    SELECT
+                        test_level "level",
+                    SUM ( CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END ) na,
+                    SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+                    SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+                    FROM
+                        PUBLIC.tb_smpf_obtwarningsignalscore
+                    WHERE
+                        inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND warningtype = #{warningType}
+                        AND forecaster != ''
+                        <if test="warningType == '暴雨'">
+                            AND isfore = '0'
+                        </if>
+                    GROUP BY
+                        test_level
+                ) t1
+            ) t1
+        UNION ALL
+        SELECT
+            forecaster,
+            CASE
+                WHEN SUM ( tscount ) = 0 THEN
+                NULL ELSE round( CAST ( SUM ( ts * levelweights ) / SUM ( tscount ) AS NUMERIC ), 2 )
+            END zh
+        FROM
+            (
+                SELECT
+                    forecaster,
+                    "level",
+                    CASE
+                        WHEN na + nb + nc = 0 THEN
+                        NULL ELSE na * 100.0 / ( na + nb + nc )
+                    END ts,
+                    CASE
+                        WHEN "level" = '红色' THEN
+                        1.8
+                        WHEN "level" = '橙色' THEN
+                        1.5
+                        WHEN "level" = '黄色' THEN
+                        1.2
+                        WHEN "level" = '蓝色' THEN
+                        1
+                    END levelweights,
+                    CASE
+                        WHEN na + nb + nc = 0 THEN
+                        0 ELSE 1.0
+                    END tscount
+            FROM
+                (
+                    SELECT
+                        forecaster,
+                        test_level "level",
+                    SUM ( CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END ) na,
+                    SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+                    SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+                    FROM
+                        PUBLIC.tb_smpf_obtwarningsignalscore
+                    WHERE
+                        inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND warningtype = #{warningType}
+                        AND forecaster != ''
+                        <if test="warningType == '暴雨'">
+                            AND isfore = '1'
+                        </if>
+                    GROUP BY
+                        forecaster,
+                        test_level
+                ) t1
+            ) t1
+        GROUP BY
+            forecaster
+    </select>
+
+    <select id="getProvincialFjByType" resultType="java.util.Map">
+        SELECT
+            forecaster,
+            "level",
+            round(CAST(sum(ts * typeweights) / sum(tscount) AS NUMERIC), 2) ts,
+            round(CAST(avg(far) AS NUMERIC), 2) far,
+            round(CAST(avg(po) AS NUMERIC), 2) po,
+            round(CAST(avg(pod) AS NUMERIC), 2) pod,
+            round(CAST(sum(t1 * typeweights) / sum(t1count) AS NUMERIC), 2) t1,
+            round(CAST(sum(t2 * typeweights) / sum(t2count) AS NUMERIC), 2) t2,
+            round(CAST(sum(t3 * typeweights) / sum(t3count) AS NUMERIC), 2) t3
+        FROM
+        (
+            SELECT
+                forecaster,
+                warningtype,
+                "level",
+                CASE WHEN na + nb + nc = 0 THEN NULL ELSE
+                na * 100.0 / (na + nb + nc) END ts,
+                CASE WHEN na + nb = 0 THEN NULL ELSE
+                nb * 100.0 / (na + nb) END far,
+                CASE WHEN na + nc = 0 THEN NULL ELSE
+                nc * 100.0 / (na + nc) END po,
+                CASE WHEN na + nc = 0 THEN NULL ELSE
+                na * 100.0 / (na + nc) END pod,
+                CASE WHEN na = 0 THEN NULL ELSE
+                leadtime / na END t1,
+                CASE WHEN na + nc = 0 THEN NULL ELSE
+                leadtime / (na + nc) END t2,
+                CASE WHEN na + nb + nc = 0 THEN NULL ELSE
+                leadtime / (na + nb + nc) END t3,
+                CASE
+                        WHEN warningtype = '暴雨' THEN 1.5
+                        WHEN warningtype = '暴雪' THEN 1.5
+                        WHEN warningtype = '大风' THEN 1
+                        WHEN warningtype = '大雾' THEN 1
+                        WHEN warningtype = '霾' THEN 1
+                        WHEN warningtype = '雷电' THEN 1
+                        WHEN warningtype = '冰雹' THEN 1.5
+                        WHEN warningtype = '雷雨大风' THEN 1.5
+                END typeweights,
+                CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1 END tscount,
+                case when na = 0 THEN 0 ELSE 1 END t1count,
+                case when na + nc = 0 THEN 0 ELSE 1 END t2count,
+                case when na + nb + nc = 0 THEN 0 ELSE 1 END t3count
+            FROM
+            (
+                SELECT
+                    '湖南省' forecaster,
+                    warningtype,
+                    test_level "level",
+                    sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na,
+                    sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                    sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc,
+                    sum(CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime
+                FROM
+                    tb_smpf_obtwarningsignalscore
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND forecaster != ''
+                    AND warningtype = '暴雨'
+                    AND isfore = '0'
+                GROUP BY
+                    warningtype,
+                    test_level
+                UNION ALL
+                SELECT
+                    '湖南省' forecaster,
+                    warningtype,
+                    test_level "level",
+                    sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na,
+                    sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                    sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc,
+                    sum(CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime
+                FROM
+                    tb_smpf_obtwarningsignalscore
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND forecaster != ''
+                    AND warningtype != '暴雨'
+                GROUP BY
+                    warningtype,
+                    test_level
+                UNION ALL
+                SELECT
+                    forecaster,
+                    warningtype,
+                    test_level "level",
+                    sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na,
+                    sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                    sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc,
+                    sum(CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime
+                FROM
+                    tb_smpf_obtwarningsignalscore
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND forecaster != ''
+                    AND warningtype = '暴雨'
+                    AND isfore = '1'
+                GROUP BY
+                    forecaster,
+                    warningtype,
+                    test_level
+                UNION ALL
+                SELECT
+                    forecaster,
+                    warningtype,
+                    test_level "level",
+                    sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na,
+                    sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                    sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc,
+                    sum(CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime
+                FROM
+                    tb_smpf_obtwarningsignalscore
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+                    AND forecaster != ''
+                    AND warningtype != '暴雨'
+                GROUP BY
+                    forecaster,
+                    warningtype,
+                    test_level
+            ) t1
+        ) t1
+        GROUP BY
+            forecaster,
+            "level"
+    </select>
+
+    <select id="getProvincialFjZhByTypeLevel" resultType="java.util.Map">
+        SELECT
+            '湖南省' forecaster,
+            ROUND( CAST ( SUM ( ts * typeweights ) / SUM ( COUNT ) AS NUMERIC ), 1 ) zh
+        FROM
+            (
+            SELECT
+                warningtype,
+                SUM ( ts * levelweights ) / SUM ( COUNT ) ts,
+            CASE
+                    WHEN warningtype = '暴雨' THEN
+                    1.5
+                    WHEN warningtype = '暴雪' THEN
+                    1.5
+                    WHEN warningtype = '大风' THEN
+                    1
+                    WHEN warningtype = '大雾' THEN
+                    1
+                    WHEN warningtype = '霾' THEN
+                    1
+                    WHEN warningtype = '雷电' THEN
+                    1
+                    WHEN warningtype = '冰雹' THEN
+                    1.5
+                    WHEN warningtype = '雷雨大风' THEN
+                    1.5
+                END typeweights,
+        CASE
+
+            WHEN SUM ( ts * levelweights ) / SUM ( COUNT ) IS NULL THEN
+            0 ELSE 1
+        END COUNT
+        FROM
+            (
+            SELECT
+                warningtype,
+                "level",
+            CASE
+
+                    WHEN na + nb + nc = 0 THEN
+                    NULL ELSE na * 100.0 / ( na + nb + nc )
+                END ts,
+        CASE
+
+            WHEN LEVEL = '红色' THEN
+            1.8
+            WHEN LEVEL = '橙色' THEN
+            1.5
+            WHEN LEVEL = '黄色' THEN
+            1.2
+            WHEN LEVEL = '蓝色' THEN
+            1
+            END levelweights,
+        CASE
+
+            WHEN na + nb + nc = 0 THEN
+            0 ELSE 1
+        END COUNT
+        FROM
+            (
+            SELECT
+                warningtype,
+                test_level "level",
+            SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,
+            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+        FROM
+            PUBLIC.tb_smpf_obtwarningsignalscore
+        WHERE
+            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+            AND warningtype = '暴雨'
+            AND isfore = '0'
+            AND forecaster != ''
+        GROUP BY
+            warningtype,
+            test_level UNION ALL
+        SELECT
+            warningtype,
+            test_level "level",
+            SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,
+            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+        FROM
+            PUBLIC.tb_smpf_obtwarningsignalscore
+        WHERE
+            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+            AND warningtype != '暴雨'
+            AND forecaster != ''
+        GROUP BY
+            warningtype,
+            test_level
+            ) rs
+            ) rs
+        GROUP BY
+            warningtype
+            ) rs UNION ALL
+        SELECT
+            forecaster,
+            ROUND( CAST ( SUM ( ts * typeweights ) / SUM ( COUNT ) AS NUMERIC ), 1 ) zh
+        FROM
+            (
+            SELECT
+                forecaster,
+                warningtype,
+                SUM ( ts * levelweights ) / SUM ( COUNT ) ts,
+            CASE
+
+                    WHEN warningtype = '暴雨' THEN
+                    1.5
+                    WHEN warningtype = '暴雪' THEN
+                    1.5
+                    WHEN warningtype = '大风' THEN
+                    1
+                    WHEN warningtype = '大雾' THEN
+                    1
+                    WHEN warningtype = '霾' THEN
+                    1
+                    WHEN warningtype = '雷电' THEN
+                    1
+                    WHEN warningtype = '冰雹' THEN
+                    1.5
+                    WHEN warningtype = '雷雨大风' THEN
+                    1.5
+                END typeweights,
+        CASE
+
+            WHEN SUM ( ts * levelweights ) / SUM ( COUNT ) IS NULL THEN
+            0 ELSE 1
+        END COUNT
+        FROM
+            (
+            SELECT
+                forecaster,
+                warningtype,
+                "level",
+            CASE
+
+                    WHEN na + nb + nc = 0 THEN
+                    NULL ELSE na * 100 / ( na + nb + nc )
+                END ts,
+        CASE
+
+            WHEN LEVEL = '红色' THEN
+            1.8
+            WHEN LEVEL = '橙色' THEN
+            1.5
+            WHEN LEVEL = '黄色' THEN
+            1.2
+            WHEN LEVEL = '蓝色' THEN
+            1
+            END levelweights,
+        CASE
+
+            WHEN na + nb + nc = 0 THEN
+            0 ELSE 1
+        END COUNT
+        FROM
+            (
+            SELECT
+                forecaster,
+                warningtype,
+                test_level "level",
+            SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,
+            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+        FROM
+            PUBLIC.tb_smpf_obtwarningsignalscore
+        WHERE
+            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+            AND warningtype = '暴雨'
+            AND isfore = '1'
+            AND forecaster != ''
+        GROUP BY
+            forecaster,
+            warningtype,
+            test_level UNION ALL
+        SELECT
+            forecaster,
+            warningtype,
+            test_level "level",
+            SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,
+            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+        FROM
+            PUBLIC.tb_smpf_obtwarningsignalscore
+        WHERE
+            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+            AND warningtype != '暴雨'
+            AND forecaster != ''
+        GROUP BY
+            forecaster,
+            warningtype,
+            test_level
+            ) rs
+            ) rs
+        GROUP BY
+            forecaster,
+            warningtype
+            ) rs
+        GROUP BY
+            forecaster
+    </select>
+
+    <!--省级预警评定详情-->
+    <select id="provincialDetail" resultType="Map">
+        SELECT
+            '湖南省气象台' department,
+            forecaster,
+            to_char( inputtime, 'YYYY-MM-DD HH24:MI:SS' ) inputtime,
+            warningtype,
+            level,
+            area,
+            district,
+            CASE
+            WHEN fact_starttime_fj IS NULL THEN
+            NULL ELSE warningtype
+            END factType,
+            CASE
+            WHEN fact_starttime_fj IS NULL THEN
+            NULL ELSE fact_level_fj
+            END factLevel,
+            CASE
+            WHEN fact_starttime_fj IS NULL THEN
+            '无实况数据' ELSE CONCAT(
+            to_char( fact_starttime_fj, 'YYYY-MM-DD HH24:MI:SS' ),
+            ' 至 ',
+            to_char( fact_endtime_fj, 'YYYY-MM-DD HH24:MI:SS' ))
+            END occTime,
+            NULL farea,
+            district fdistrict,
+            leadtime_bfj,
+            leadtime_fj,
+            warningp_bfj,
+            warningp_fj
+        FROM
+          public.tb_smpf_obtwarningsignalscore
+        WHERE
+            inputtime BETWEEN to_timestamp(#{start}, 'yyyy-MM-dd hh24:mi:ss')
+            AND to_timestamp(#{end}, 'yyyy-MM-dd hh24:mi:ss')
+            AND warningtype = #{warningType}
+            <if test="level != 'all'">
+                AND level = #{level}
+            </if>
+            <if test="rs != 'all'">
+                AND ( warningp_bfj = #{rs} OR warningp_fj = #{rs} )
+            </if>
+            <if test="warningType == '暴雨'">
+                AND isfore = #{type}
+            </if>
+        order by inputtime
+    </select>
+
+    <select id="getCityWarningAll" resultType="java.util.Map">
+        	<if test="filed == 'area'">
+                SELECT
+                '湖南省' area,
+                <choose>
+                    <when test="method == 'all'">
+                        '所有级别' "level",
+                    </when>
+                    <otherwise>
+                        '不分级别' "level",
+                    </otherwise>
+                </choose>
+                na,
+                nb,
+                nc,
+                ( na + nb + nc ) total,
+                case when na + nb + nc = 0 THEN NULL ELSE
+                round(na * 100.0 / (na + nb + nc), 2) END ts,
+                case when na2 + nb + nc = 0 THEN NULL ELSE
+                round(CAST ( na2 * 100.0 / ( na2 + nb + nc ) AS NUMERIC), 2) END zh,
+                case (na + nc) when 0 then 0
+                else ROUND( na * 100.0 / ( na + nc ), 2 ) end pod,
+                case (na + nc) when 0 then 0
+                else ROUND( nc * 100.0 / ( na + nc ), 2 ) end po,
+                case (na + nb) when 0 then 0
+                else ROUND( nb * 100.0 / ( na + nb  ), 2 ) end far,
+                case (na ) when 0 then 0
+                else ROUND( leadtime / na, 2  ) end t1,
+                case ( na + nc ) when 0 then 0
+                else ROUND( leadtime / ( na + nc ), 2  ) end t2,
+                case ( na + nb + nc ) when 0 then 0
+                else ROUND( leadtime / ( na + nb + nc ), 2  ) end t3
+                FROM (SELECT
+                <choose>
+                    <when test="method == 'all'">
+                        SUM (CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime,
+                        sum(CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END) na,
+                        sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na2,
+                        sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                    </when>
+                    <otherwise>
+                        SUM (CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END) leadtime,
+                        sum(CASE WHEN warningp_bfj = 'NA' THEN 1 ELSE 0 END) na,
+                        sum(CASE WHEN warningp_bfj = 'NA' THEN 1 * warningp_score_bfj ELSE 0 END) na2,
+                        sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                    </otherwise>
+                </choose>
+                FROM
+                PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+                WHERE
+                inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                AND warningtype = #{warningType}
+                and department != '湖南省气象台'
+                ) t1 UNION ALL
+            </if>
+            SELECT
+                area,
+                <if test="filed != 'area'">
+                    ${filed},
+                </if>
+                <choose>
+                    <when test="method == 'all'">
+                        '所有级别' "level",
+                    </when>
+                    <otherwise>
+                        '不分级别' "level",
+                    </otherwise>
+                </choose>
+                na,
+                nb,
+                nc,
+                ( na + nb + nc ) total,
+                case when na + nb + nc = 0 THEN NULL ELSE
+                round(na * 100.0 / (na + nb + nc), 2) END ts,
+                case when na2 + nb + nc = 0 THEN NULL ELSE
+                round(CAST ( na2 * 100.0 / ( na2 + nb + nc ) AS NUMERIC), 2) END zh,
+                case (na + nc) when 0 then 0
+                else ROUND( na * 100.0 / ( na + nc ), 2 ) end pod,
+                case (na + nc) when 0 then 0
+                else ROUND( nc * 100.0 / ( na + nc ), 2 ) end po,
+                case (na + nb) when 0 then 0
+                else ROUND( nb * 100.0 / ( na + nb  ), 2 ) end far,
+                case (na ) when 0 then 0
+                else ROUND( leadtime / na, 2  ) end t1,
+                case ( na + nc ) when 0 then 0
+                else ROUND( leadtime / ( na + nc ), 2  ) end t2,
+                case ( na + nb + nc ) when 0 then 0
+                else ROUND( leadtime / ( na + nb + nc ), 2  ) end t3
+            FROM (SELECT
+                area,
+                <if test="filed != 'area'">
+                    ${filed},
+                </if>
+                <choose>
+                    <when test="method == 'all'">
+                        SUM (CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime,
+                        sum(CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END) na,
+                        sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na2,
+                        sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                    </when>
+                    <otherwise>
+                        SUM (CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END) leadtime,
+                        sum(CASE WHEN warningp_bfj = 'NA' THEN 1 ELSE 0 END) na,
+                        sum(CASE WHEN warningp_bfj = 'NA' THEN 1 * warningp_score_bfj ELSE 0 END) na2,
+                        sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                    </otherwise>
+                </choose>
+            FROM
+                PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+            WHERE
+                inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                AND warningtype = #{warningType}
+                and department != '湖南省气象台'
+            GROUP BY
+                area
+                <if test="filed != 'area'">
+                    ,${filed}
+                </if>) t1
+    </select>
+
+    <select id="getCityWarningAllZh" resultType="java.util.Map">
+        <if test="filed == 'area'">
+            SELECT
+            '湖南省' area,
+            <choose>
+                <when test="method == 'all'">
+                    '所有级别' "level",
+                </when>
+                <otherwise>
+                    '不分级别' "level",
+                </otherwise>
+            </choose>
+            case when sum(tscount) = 0 then null else
+            round(sum(ts * typeweights) / sum(tscount), 2) end ts,
+            case when sum(t1count) = 0 then null else
+            round(sum(t1 * typeweights) / sum(t1count), 2) end t1,
+            case when sum(t2count) = 0 then null else
+            round(sum(t2 * typeweights) / sum(t2count), 2) end t2,
+            case when sum(t3count) = 0 then null else
+            round(sum(t3 * typeweights) / sum(t3count), 2) end t3,
+            round(CAST(avg(far) AS NUMERIC), 2) far,
+            round(CAST(avg(po) AS NUMERIC), 2) po,
+            round(CAST(avg(pod) AS NUMERIC), 2) pod,
+            case when sum(zhcount) = 0 then null else
+            round(sum(zh * typeweights) / sum(zhcount), 2) end zh
+            FROM
+            (SELECT
+            warningtype,
+            na,
+            nb,
+            nc,
+            ( na + nb + nc ) total,
+            case when na + nb + nc = 0 THEN NULL ELSE
+            round(na * 100.0 / (na + nb + nc), 2) END ts,
+            case when na2 + nb + nc = 0 THEN NULL ELSE
+            round(CAST ( na2 * 100.0 / ( na2 + nb + nc ) AS NUMERIC), 2) END zh,
+            case when na + nc = 0 then 0
+            else round( na * 100.0 / ( na + nc ), 2 ) end pod,
+            case when na + nc = 0 then 0
+            else round( nc * 100.0 / ( na + nc ), 2 ) end po,
+            case when na + nb = 0 then 0
+            else round( nb * 100.0 / ( na + nb  ), 2 ) end far,
+            case (na ) when 0 then 0
+            else ROUND( leadtime / na, 2  ) end t1,
+            case ( na + nc ) when 0 then 0
+            else ROUND( leadtime / ( na + nc ), 2  ) end t2,
+            case ( na + nb + nc ) when 0 then 0
+            else ROUND( leadtime / ( na + nb + nc ), 2  ) end t3,
+            CASE
+            WHEN warningtype = '暴雨' THEN 1.5
+            WHEN warningtype = '暴雪' THEN 1.5
+            WHEN warningtype = '大风' THEN 1
+            WHEN warningtype = '大雾' THEN 1
+            WHEN warningtype = '霾' THEN 1
+            WHEN warningtype = '雷电' THEN 1
+            WHEN warningtype = '冰雹' THEN 1.5
+            WHEN warningtype = '雷雨大风' THEN 1.5
+            END typeweights,
+            CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1 END tscount,
+            case when na2 + nb + nc = 0 THEN 0 ELSE 1 END zhcount,
+            case when na = 0 THEN 0 ELSE 1 END t1count,
+            case when na + nc = 0 THEN 0 ELSE 1 END t2count,
+            case when na + nb + nc = 0 THEN 0 ELSE 1 END t3count
+
+            FROM (SELECT
+            warningtype,
+            <choose>
+                <when test="method == 'all'">
+                    SUM (CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime,
+                    sum(CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END) na,
+                    sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na2,
+                    sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                    sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                </when>
+                <otherwise>
+                    SUM (CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END) leadtime,
+                    sum(CASE WHEN warningp_bfj = 'NA' THEN 1 ELSE 0 END) na,
+                    sum(CASE WHEN warningp_bfj = 'NA' THEN 1 * warningp_score_bfj ELSE 0 END) na2,
+                    sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                    sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                </otherwise>
+            </choose>
+            FROM
+            PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+            WHERE
+            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+            AND warningtype != ''
+            AND department != '湖南省气象台'
+            GROUP BY
+            warningtype) t1) t1
+            UNION ALL
+        </if>
+            SELECT
+            area,
+            <choose>
+                <when test="method == 'all'">
+                    '所有级别' "level",
+                </when>
+                <otherwise>
+                    '不分级别' "level",
+                </otherwise>
+            </choose>
+            <if test="filed != 'area'">
+                ${filed},
+            </if>
+            CASE WHEN sum(tscount) = 0 THEN NULL ELSE
+            round(sum(ts * typeweights) / sum(tscount), 2) END ts,
+            CASE WHEN sum(t1count) = 0 THEN NULL ELSE
+            round(sum(t1 * typeweights) / sum(t1count), 2) END t1,
+            CASE WHEN sum(t2count) = 0 THEN NULL ELSE
+            round(sum(t2 * typeweights) / sum(t2count), 2) END t2,
+            CASE WHEN sum(t3count) = 0 THEN NULL ELSE
+            round(sum(t3 * typeweights) / sum(t3count), 2) END t3,
+            round(CAST(avg(far) AS NUMERIC), 2) far,
+            round(CAST(avg(po) AS NUMERIC), 2) po,
+            round(CAST(avg(pod) AS NUMERIC), 2) pod,
+            CASE WHEN sum(zhcount) = 0 THEN NULL ELSE
+            round(sum(zh * typeweights) / sum(zhcount), 2) END zh
+            FROM
+            (SELECT
+                area,
+                <if test="filed != 'area'">
+                    ${filed},
+                </if>
+                warningtype,
+                na,
+                nb,
+                nc,
+                ( na + nb + nc ) total,
+                case when na + nb + nc = 0 THEN NULL ELSE
+                round(na * 100.0 / (na + nb + nc), 2) END ts,
+                case when na2 + nb + nc = 0 THEN NULL ELSE
+                round(CAST ( na2 * 100.0 / ( na2 + nb + nc ) AS NUMERIC), 2) END zh,
+                case when na + nc = 0 then 0
+                else round( na * 100.0 / ( na + nc ), 2 ) end pod,
+                case when na + nc = 0 then 0
+                else round( nc * 100.0 / ( na + nc ), 2 ) end po,
+                case when na + nb = 0 then 0
+                else round( nb * 100.0 / ( na + nb  ), 2 ) end far,
+                case (na ) when 0 then 0
+                else ROUND( leadtime / na, 2  ) end t1,
+                case ( na + nc ) when 0 then 0
+                else ROUND( leadtime / ( na + nc ), 2  ) end t2,
+                case ( na + nb + nc ) when 0 then 0
+                else ROUND( leadtime / ( na + nb + nc ), 2  ) end t3,
+                CASE
+                    WHEN warningtype = '暴雨' THEN 1.5
+                    WHEN warningtype = '暴雪' THEN 1.5
+                    WHEN warningtype = '大风' THEN 1
+                    WHEN warningtype = '大雾' THEN 1
+                    WHEN warningtype = '霾' THEN 1
+                    WHEN warningtype = '雷电' THEN 1
+                    WHEN warningtype = '冰雹' THEN 1.5
+                    WHEN warningtype = '雷雨大风' THEN 1.5
+                    END typeweights,
+                CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1 END tscount,
+                case when na2 + nb + nc = 0 THEN 0 ELSE 1 END zhcount,
+                case when na = 0 THEN 0 ELSE 1 END t1count,
+                case when na + nc = 0 THEN 0 ELSE 1 END t2count,
+                case when na + nb + nc = 0 THEN 0 ELSE 1 END t3count
+            FROM (SELECT
+                area,
+                <if test="filed != 'area'">
+                    ${filed},
+                </if>
+                warningtype,
+                <choose>
+                    <when test="method == 'all'">
+                        SUM (CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime,
+                        sum(CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END) na,
+                        sum(CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END) na2,
+                        sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                    </when>
+                    <otherwise>
+                        SUM (CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END) leadtime,
+                        sum(CASE WHEN warningp_bfj = 'NA' THEN 1 ELSE 0 END) na,
+                        sum(CASE WHEN warningp_bfj = 'NA' THEN 1 * warningp_score_bfj ELSE 0 END) na2,
+                        sum(CASE WHEN warningp_bfj = 'NB' THEN 1 ELSE 0 END) nb,
+                        sum(CASE WHEN warningp_bfj = 'NC' THEN 1 ELSE 0 END) nc
+                    </otherwise>
+                </choose>
+            FROM
+                PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+            WHERE
+                inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                AND warningtype != ''
+                AND department != '湖南省气象台'
+            GROUP BY
+                area,
+                <if test="filed != 'area'">
+                    ${filed},
+                </if>
+                warningtype) t1) t1
+            GROUP BY
+                area
+                <if test="filed != 'area'">
+                    ,${filed}
+                </if>
+    </select>
+
+    <select id="getCityWarningFj" resultType="java.util.Map">
+        <if test="filed == 'area'">
+            SELECT
+                '湖南省' area,
+                "level",
+                na,
+                nb,
+                nc,
+                ( na + nb + nc ) total,
+                case when na + nb + nc = 0 THEN NULL ELSE
+                round(na * 100.0 / (na + nb + nc), 2) END ts,
+                case when na + nc = 0 then 0
+                else round( na * 100.0 / ( na + nc ), 2 ) end pod,
+                case when na + nc = 0 then 0
+                else round( nc * 100.0 / ( na + nc ), 2 ) end po,
+                case when na + nb = 0 then 0
+                else round( nb * 100.0 / ( na + nb  ), 2 ) end far,
+                case (na ) when 0 then 0
+                else ROUND( leadtime / na, 2  ) end t1,
+                case ( na + nc ) when 0 then 0
+                else ROUND( leadtime / ( na + nc ), 2  ) end t2,
+                case ( na + nb + nc ) when 0 then 0
+                else ROUND( leadtime / ( na + nb + nc ), 2  ) end t3
+            FROM
+                (
+                SELECT
+                    test_level "level",
+                    SUM ( CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) leadtime,
+                    SUM ( CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END ) na,
+                    SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+                    SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+                FROM
+                  PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                    AND warningtype = #{warningType}
+                    AND department != '湖南省气象台'
+                GROUP BY
+                  test_level
+                ) t1
+            UNION ALL
+        </if>
+        SELECT
+            area,
+            "level",
+           <if test="filed != 'area'">
+               ${filed},
+           </if>
+            na,
+            nb,
+            nc,
+            ( na + nb + nc ) total,
+            case when na + nb + nc = 0 THEN NULL ELSE
+            round(na * 100.0 / (na + nb + nc), 2) END ts,
+            case when na + nc = 0 then 0
+            else round( na * 100.0 / ( na + nc ), 2 ) end pod,
+            case when na + nc = 0 then 0
+            else round( nc * 100.0 / ( na + nc ), 2 ) end po,
+            case when na + nb = 0 then 0
+            else round( nb * 100.0 / ( na + nb  ), 2 ) end far,
+            case (na ) when 0 then 0
+            else ROUND( leadtime / na, 2  ) end t1,
+            case ( na + nc ) when 0 then 0
+            else ROUND( leadtime / ( na + nc ), 2  ) end t2,
+            case ( na + nb + nc ) when 0 then 0
+            else ROUND( leadtime / ( na + nb + nc ), 2  ) end t3
+        FROM (
+                SELECT
+                    area,
+                    <if test="filed != 'area'">
+                        ${filed},
+                    </if>
+                    test_level "level",
+                    SUM (CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END) leadtime,
+                    sum(CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END) na,
+                    sum(CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END) nb,
+                    sum(CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END) nc
+                FROM
+                    PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+                WHERE
+                    inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                    AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                    AND warningtype = #{warningType}
+                    AND department != '湖南省气象台'
+                GROUP BY
+                    area,
+                    <if test="filed != 'area'">
+                        ${filed},
+                    </if>
+                    test_level
+              ) t1
+    </select>
+
+    <select id="getZhByLevel" resultType="java.util.Map">
+        <if test="filed == 'area'">
+            SELECT
+                '湖南省' area,
+                CASE WHEN sum(tscount) = 0 THEN NULL
+                ELSE round(CAST(sum(ts * levelweights) / sum(tscount) AS NUMERIC), 2) END zh
+            FROM
+                (
+                SELECT
+                    "level",
+                    CASE
+                        WHEN na + nb + nc = 0 THEN
+                        NULL ELSE na * 100.0 / ( na + nb + nc )
+                    END ts,
+                    CASE
+                        WHEN "level" = '红色' THEN 1.8
+                        WHEN "level" = '橙色' THEN 1.5
+                        WHEN "level" = '黄色' THEN 1.2
+                        WHEN "level" = '蓝色' THEN 1
+                    END levelweights,
+                    CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1.0 END tscount
+                FROM
+                    (
+                    SELECT
+                        test_level "level",
+                        SUM ( CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END ) na,
+                        SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+                        SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+                    FROM
+                      PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+                    WHERE
+                        inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND warningtype = #{warningType}
+                        AND department != '湖南省气象台'
+                    GROUP BY
+                      test_level
+                    ) t1
+                ) t1
+            GROUP BY
+            area
+            UNION ALL
+        </if>
+        SELECT
+            area,
+            <if test="filed != 'area'">
+                ${filed},
+            </if>
+            CASE WHEN sum(tscount) = 0 THEN NULL
+            ELSE round(CAST(sum(ts * levelweights) / sum(tscount) AS NUMERIC), 2) END zh
+        FROM
+            (
+            SELECT
+                area,
+                <if test="filed != 'area'">
+                    ${filed},
+                </if>
+                "level",
+            CASE
+                    WHEN na + nb + nc = 0 THEN
+                    NULL ELSE na * 100.0 / ( na + nb + nc )
+            END ts,
+            CASE
+                WHEN "level" = '红色' THEN 1.8
+                WHEN "level" = '橙色' THEN 1.5
+                WHEN "level" = '黄色' THEN 1.2
+                WHEN "level" = '蓝色' THEN 1
+            END levelweights,
+            CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1.0 END tscount
+        FROM
+            (
+            SELECT
+                area,
+                <if test="filed != 'area'">
+                    ${filed},
+                </if>
+                test_level "level",
+            SUM ( CASE WHEN warningp_fj = 'NA' THEN 1 * warningp_score_fj ELSE 0 END ) na,
+            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+        FROM
+            PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+        WHERE
+            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+            AND warningtype = #{warningType}
+            AND department != '湖南省气象台'
+        GROUP BY
+            area,
+            <if test="filed != 'area'">
+                ${filed},
+            </if>
+            test_level
+            ) t1
+            ) t1
+        GROUP BY
+            area
+            <if test="filed != 'area'">
+                ,${filed}
+            </if>
+    </select>
+
+    <select id="getCityWarningFjZh" resultType="java.util.Map">
+        <if test="filed == 'area'">
+            SELECT
+                '湖南省' area,
+                "level",
+                CASE WHEN SUM ( tscount ) = 0 THEN NULL ELSE
+                round( SUM ( ts * typeweights ) / SUM ( tscount ), 2 ) END ts,
+                round(CAST(avg(far) AS NUMERIC), 2) far,
+                round(CAST(avg(po) AS NUMERIC), 2) po,
+                round(CAST(avg(pod) AS NUMERIC), 2) pod,
+                CASE WHEN SUM ( t1count ) = 0 THEN NULL ELSE
+                round( SUM ( t1 * typeweights ) / SUM ( t1count ), 2 ) END t1,
+                CASE WHEN SUM ( t2count ) = 0 THEN NULL ELSE
+                round( SUM ( t2 * typeweights ) / SUM ( t2count ), 2 ) END t2,
+                CASE WHEN SUM ( t3count ) = 0 THEN NULL ELSE
+                round( SUM ( t3 * typeweights ) / SUM ( t3count ), 2 ) END t3
+            FROM
+                (
+                    SELECT
+                        warningtype,
+                        "level",
+                        na,
+                        nb,
+                        nc,
+                        ( na + nb + nc ) total,
+                    CASE
+                        WHEN na + nb + nc = 0 THEN
+                        NULL ELSE round( na * 100.0 / ( na + nb + nc ), 2 )
+                    END ts,
+                    case when na + nc = 0 then 0
+                    else round( na * 100.0 / ( na + nc ), 2 ) end pod,
+                    case when na + nc = 0 then 0
+                    else round( nc * 100.0 / ( na + nc ), 2 ) end po,
+                    case when na + nb = 0 then 0
+                    else round( nb * 100.0 / ( na + nb  ), 2 ) end far,
+                    CASE
+                        WHEN na = 0 THEN
+                        0 ELSE ROUND( leadtime / na, 2 )
+                    END t1,
+                    CASE
+                        WHEN na + nc = 0 THEN
+                        0 ELSE ROUND( leadtime / ( na + nc ), 2 )
+                    END t2,
+                    CASE
+                        WHEN na + nb + nc = 0 THEN
+                        0 ELSE ROUND( leadtime / ( na + nb + nc ), 2 )
+                    END t3,
+                    CASE
+                        WHEN warningtype = '暴雨' THEN 1.5
+                        WHEN warningtype = '暴雪' THEN 1.5
+                        WHEN warningtype = '大风' THEN 1
+                        WHEN warningtype = '大雾' THEN 1
+                        WHEN warningtype = '霾' THEN 1
+                        WHEN warningtype = '雷电' THEN 1
+                        WHEN warningtype = '冰雹' THEN 1.5
+                        WHEN warningtype = '雷雨大风' THEN 1.5
+                    END typeweights,
+                    CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1 END tscount,
+                    CASE WHEN na = 0 THEN 0 ELSE 1 END t1count,
+                    CASE WHEN na + nc = 0 THEN 0 ELSE 1 END t2count,
+                    CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1 END t3count
+                FROM
+                    (
+                        SELECT
+                            warningtype,
+                            test_level "level",
+                            SUM ( CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) leadtime,
+                            SUM ( CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END ) na,
+                            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+                            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+                        FROM
+                            PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+                        WHERE
+                            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND warningtype != ''
+                            AND department != '湖南省气象台'
+                        GROUP BY
+                            warningtype,
+                            test_level
+                    ) t1
+                ) t1
+            GROUP BY
+                "level" UNION ALL
+        </if>
+        SELECT
+            area,
+            <if test="filed != 'area'">
+                ${filed},
+            </if>
+            "level",
+            CASE
+                WHEN SUM ( tscount ) = 0 THEN
+                NULL ELSE round( SUM ( ts * typeweights ) / SUM ( tscount ), 2 )
+            END ts,
+            round(CAST(avg(far) AS NUMERIC), 2) far,
+            round(CAST(avg(po) AS NUMERIC), 2) po,
+            round(CAST(avg(pod) AS NUMERIC), 2) pod,
+            CASE
+                WHEN SUM ( t1count ) = 0 THEN
+                NULL ELSE round( SUM ( t1 * typeweights ) / SUM ( t1count ), 2 )
+            END t1,
+            CASE
+                WHEN SUM ( t2count ) = 0 THEN
+                NULL ELSE round( SUM ( t2 * typeweights ) / SUM ( t2count ), 2 )
+            END t2,
+            CASE
+                WHEN SUM ( t3count ) = 0 THEN
+                NULL ELSE round( SUM ( t3 * typeweights ) / SUM ( t3count ), 2 )
+            END t3
+        FROM
+            (
+                SELECT
+                    area,
+                    <if test="filed != 'area'">
+                        ${filed},
+                    </if>
+                    warningtype,
+                    "level",
+                    na,
+                    nb,
+                    nc,
+                    ( na + nb + nc ) total,
+                    CASE
+                        WHEN na + nb + nc = 0 THEN
+                        NULL ELSE round( na * 100.0 / ( na + nb + nc ), 2 )
+                    END ts,
+                    case when na + nc = 0 then 0
+                    else round( na * 100.0 / ( na + nc ), 2 ) end pod,
+                    case when na + nc = 0 then 0
+                    else round( nc * 100.0 / ( na + nc ), 2 ) end po,
+                    case when na + nb = 0 then 0
+                    else round( nb * 100.0 / ( na + nb  ), 2 ) end far,
+                    CASE
+                        WHEN na = 0 THEN
+                        0 ELSE ROUND( leadtime / na, 2 )
+                    END t1,
+                    CASE
+                        WHEN na + nc = 0 THEN
+                        0 ELSE ROUND( leadtime / ( na + nc ), 2 )
+                    END t2,
+                    CASE
+                        WHEN na + nb + nc = 0 THEN
+                        0 ELSE ROUND( leadtime / ( na + nb + nc ), 2 )
+                    END t3,
+                    CASE
+                        WHEN warningtype = '暴雨' THEN 1.5
+                        WHEN warningtype = '暴雪' THEN 1.5
+                        WHEN warningtype = '大风' THEN 1
+                        WHEN warningtype = '大雾' THEN 1
+                        WHEN warningtype = '霾' THEN 1
+                        WHEN warningtype = '雷电' THEN 1
+                        WHEN warningtype = '冰雹' THEN 1.5
+                        WHEN warningtype = '雷雨大风' THEN 1.5
+                    END typeweights,
+                    CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1 END tscount,
+                    CASE WHEN na = 0 THEN 0 ELSE 1 END t1count,
+                    CASE WHEN na + nc = 0 THEN 0 ELSE 1 END t2count,
+                    CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1 END t3count
+            FROM
+                (
+                    SELECT
+                        area,
+                        <if test="filed != 'area'">
+                            ${filed},
+                        </if>
+                        warningtype,
+                        test_level "level",
+                        SUM ( CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) leadtime,
+                        SUM ( CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END ) na,
+                        SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+                        SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+                    FROM
+                        PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+                    WHERE
+                        inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                        AND warningtype != ''
+                        AND department != '湖南省气象台'
+                    GROUP BY
+                        area,
+                        <if test="filed != 'area'">
+                            ${filed},
+                        </if>
+                        warningtype,
+                        test_level
+                ) t1
+            ) t1
+        GROUP BY
+            area,
+            <if test="filed != 'area'">
+                ${filed},
+            </if>
+            "level"
+    </select>
+
+    <select id="getZhByTypeLevel" resultType="java.util.Map">
+        <if test="filed == 'area'">
+        SELECT
+            '湖南省' area,
+            ROUND( CAST ( SUM ( ts * typeweights ) / SUM ( COUNT ) AS NUMERIC ), 1 ) zh
+        FROM
+            (
+                SELECT
+                    warningtype,
+                    SUM ( ts * levelweights ) / SUM ( COUNT ) ts,
+                    CASE
+                        WHEN warningtype = '暴雨' THEN 1.5
+                        WHEN warningtype = '暴雪' THEN 1.5
+                        WHEN warningtype = '大风' THEN 1
+                        WHEN warningtype = '大雾' THEN 1
+                        WHEN warningtype = '霾' THEN 1
+                        WHEN warningtype = '雷电' THEN 1
+                        WHEN warningtype = '冰雹' THEN 1.5
+                        WHEN warningtype = '雷雨大风' THEN 1.5
+                    END typeweights,
+                    CASE
+                        WHEN SUM ( ts * levelweights ) / SUM ( COUNT ) IS NULL THEN
+                        0 ELSE 1
+                    END COUNT
+                FROM
+                (
+                    SELECT
+                        warningtype,
+                        "level",
+                        CASE
+                            WHEN na + nb + nc = 0 THEN
+                            NULL ELSE na * 100.0 / ( na + nb + nc )
+                        END ts,
+                        CASE
+                            WHEN LEVEL = '红色' THEN 1.8
+                            WHEN LEVEL = '橙色' THEN 1.5
+                            WHEN LEVEL = '黄色' THEN 1.2
+                            WHEN LEVEL = '蓝色' THEN 1
+                        END levelweights,
+                        CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1 END COUNT
+                    FROM
+                    (
+                        SELECT
+                            warningtype,
+                            test_level "level",
+                            SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,
+                            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+                            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+                        FROM
+                            PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+                        WHERE
+                            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND warningtype != ''
+                            AND department != '湖南省气象台'
+                        GROUP BY
+                            warningtype,
+                            test_level
+                    ) rs
+                ) rs
+                GROUP BY
+                    warningtype
+            ) rs UNION ALL
+        </if>
+        SELECT
+            area,
+            <if test="filed != 'area'">
+                ${filed},
+            </if>
+            ROUND( CAST ( SUM ( ts * typeweights ) / SUM ( COUNT ) AS NUMERIC ), 1 ) zh
+        FROM
+            (
+                SELECT
+                    area,
+                    <if test="filed != 'area'">
+                        ${filed},
+                    </if>
+                    warningtype,
+                    SUM ( ts * levelweights ) / SUM ( COUNT ) ts,
+                    CASE
+                        WHEN warningtype = '暴雨' THEN 1.5
+                        WHEN warningtype = '暴雪' THEN 1.5
+                        WHEN warningtype = '大风' THEN 1
+                        WHEN warningtype = '大雾' THEN 1
+                        WHEN warningtype = '霾' THEN 1
+                        WHEN warningtype = '雷电' THEN 1
+                        WHEN warningtype = '冰雹' THEN 1.5
+                        WHEN warningtype = '雷雨大风' THEN 1.5
+                    END typeweights,
+                    CASE
+                        WHEN SUM ( ts * levelweights ) / SUM ( COUNT ) IS NULL THEN
+                        0 ELSE 1
+                    END COUNT
+                FROM
+                (
+                    SELECT
+                        area,
+                        <if test="filed != 'area'">
+                            ${filed},
+                        </if>
+                        warningtype,
+                        "level",
+                    CASE
+                        WHEN na + nb + nc = 0 THEN
+                        NULL ELSE na * 100 / ( na + nb + nc )
+                    END ts,
+                    CASE
+                        WHEN LEVEL = '红色' THEN 1.8
+                        WHEN LEVEL = '橙色' THEN 1.5
+                        WHEN LEVEL = '黄色' THEN 1.2
+                        WHEN LEVEL = '蓝色' THEN 1
+                    END levelweights,
+                    CASE WHEN na + nb + nc = 0 THEN 0 ELSE 1 END COUNT
+                FROM
+                    (
+                        SELECT
+                            area,
+                            <if test="filed != 'area'">
+                                ${filed},
+                            </if>
+                            warningtype,
+                            test_level "level",
+                            SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,
+                            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+                            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+                        FROM
+                            PUBLIC.tb_smpf_obtwarningsignalscore_dishi
+                        WHERE
+                            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND warningtype != ''
+                            AND department != '湖南省气象台'
+                        GROUP BY
+                            area,
+                            <if test="filed != 'area'">
+                                ${filed},
+                            </if>
+                            warningtype,
+                            test_level
+                    ) rs
+                ) rs
+                GROUP BY
+                    area,
+                    <if test="filed != 'area'">
+                        ${filed},
+                    </if>
+                    warningtype
+            ) rs
+        GROUP BY
+            area
+            <if test="filed != 'area'">
+                ,${filed}
+            </if>
+    </select>
+
+    <select id="cityDetail" resultType="java.util.Map">
+        SELECT
+        department,
+        forecaster,
+        to_char( inputtime, 'yyyy-mm-dd hh24:mi' ) inputtime,
+        warningtype,
+        level,
+        area,
+        district,
+        CASE
+        WHEN fact_starttime_fj IS NULL THEN
+        NULL ELSE warningtype
+        END factType,
+        CASE
+        WHEN fact_starttime_fj IS NULL THEN
+        NULL ELSE fact_level_fj
+        END factLevel,
+        CASE
+        WHEN fact_starttime_fj IS NULL THEN
+        '无实况数据' ELSE CONCAT(
+        to_char( fact_starttime_fj, 'yyyy-mm-dd hh24:mi' ),
+        ' 至 ',
+        to_char( fact_endtime_fj, 'yyyy-mm-dd hh24:mi' ))
+        END occTime,
+        NULL farea,
+        district fdistrict,
+        leadtime_bfj,
+        leadtime_fj,
+        warningp_bfj,
+        warningp_fj
+        FROM
+        public.tb_smpf_obtwarningsignalscore_dishi
+        WHERE
+        inputtime BETWEEN to_timestamp(#{start}, 'yyyy-mm-dd hh24:mi:ss')
+        AND to_timestamp(#{end}, 'yyyy-mm-dd hh24:mi:ss')
+        <if test="department != 'all'">
+            AND department = #{department}
+        </if>
+        AND warningtype = #{warningType}
+        <if test="level != 'all'">
+            AND level = #{level}
+        </if>
+        <if test="rs != 'all'">
+            AND ( warningp_bfj = #{rs} OR warningp_fj = #{rs} )
+        </if>
+        <if test="warningType == '暴雨'">
+            AND isfore = #{type}
+        </if>
+        order by inputtime
+    </select>
+
+    <select id="rainScore" resultType="java.util.Map">
+        SELECT
+        wfhour,
+        wfsrc,
+        round( me, 3 ) me,
+        round( mae, 3 ) mae,
+        round( pc, 3 ) pc,
+        CASE WHEN k1 IS NULL THEN NULL ELSE round( k1, 3 ) END k1,
+        CASE WHEN k2 IS NULL THEN NULL ELSE round( k2, 3 ) END k2,
+        CASE WHEN k3 IS NULL THEN NULL ELSE round( k3, 3 ) END k3,
+        <choose>
+            <when test="wfinterval == '1'">
+                round(pc / 3 + CASE WHEN k1 IS NULL THEN 0 ELSE k1 / 6 END +
+                CASE WHEN k2 IS NULL THEN 0 ELSE k2 / 2 END, 3) zh
+            </when>
+            <otherwise>
+                round(pc / 3 + CASE WHEN k1 IS NULL THEN 0 ELSE k1 / 6 END +
+                CASE WHEN k2 IS NULL THEN 0 ELSE k2 / 4 END +
+                CASE WHEN k3 IS NULL THEN 0 ELSE k3 / 4 END, 3) zh
+            </otherwise>
+        </choose>
+        FROM
+        (
+        SELECT
+        wfhour,
+        wfsrc,
+        SUM ( mea ) / SUM ( total ) me,
+        SUM ( mea ) / SUM ( total ) mae,
+        SUM ( pc_na + pc_nd ) * 100.0 / SUM ( total ) pc,
+        CASE WHEN SUM ( ybxa + ybxb + ybxc ) = 0 THEN NULL
+        ELSE SUM ( ybxa ) * 100.0 / SUM ( ybxa + ybxb + ybxc ) END k1,
+        CASE WHEN SUM ( ybx2a + ybx2b + ybx2c ) = 0 THEN NULL
+        ELSE SUM ( ybx2a ) * 100.0 / SUM ( ybx2a + ybx2b + ybx2c ) END k2,
+        CASE WHEN SUM ( ybx3a + ybx3b + ybx3c ) = 0 THEN NULL
+        ELSE SUM ( ybx3a ) * 100.0 / SUM ( ybx3a + ybx3b + ybx3c ) END k3
+        FROM
+        PUBLIC.tb_score_day_pre_duanlin
+        WHERE
+        wfdatetime BETWEEN CAST ( #{start} || '0000' AS BIGINT )
+        AND CAST ( #{end} || '2359' AS BIGINT )
+        <if test="ftime != 'zh'">
+            AND substr( wfdatetime || '', 9, 2 ) = #{ftime}
+        </if>
+        AND wfinterval = CAST(#{wfinterval} AS INTEGER)
+        AND TYPE = #{type}
+        GROUP BY
+        wfhour,
+        wfsrc
+        ) t1 ORDER BY wfsrc
+    </select>
+
+    <select id="temScore" resultType="java.util.Map">
+        SELECT
+        wfhour,
+        wfsrc,
+        round( SUM ( mae_total ) / SUM ( total ), 3 ) mae,
+        round( SUM ( ok2 ) * 100 / SUM ( total ), 3 ) tt
+        FROM
+        public.tb_score_day_tem_duanlin
+        WHERE
+        wfdatetime BETWEEN CAST(#{start} || '0000' AS BIGINT)
+        AND CAST(#{end} || '2359' AS BIGINT)
+        <if test="ftime != 'zh'">
+            AND substr( wfdatetime || '', 9, 2 ) = #{ftime}
+        </if>
+        AND wfinterval = CAST(#{wfinterval} AS INTEGER)
+        AND type = #{type}
+        GROUP BY
+        wfhour,
+        wfsrc
+    </select>
+
+    <select id="getModelName" resultType="java.util.Map">
+        SELECT modelname,zwname FROM public.tb_model_detil_2021 GROUP BY modelname,zwname
+    </select>
+
+    <select id="getHeavyMonitorAll" resultType="java.util.Map">
+        SELECT
+            area area_district,
+            <if test="filed == 'forecaster'">
+                ${filed},
+            </if>
+            CASE
+                    WHEN na + nb + nc = 0 THEN
+                    NULL ELSE round( CAST ( na * 100.0 / ( na + nb + nc ) AS NUMERIC ), 3 )
+                END ts,
+            CASE
+                WHEN na + nb = 0 THEN
+                NULL ELSE round( CAST ( nb * 100.0 / ( na + nb ) AS NUMERIC ), 3 )
+                END far,
+            CASE
+                WHEN na + nc = 0 THEN
+                NULL ELSE round( CAST ( nc * 100.0 / ( na + nc ) AS NUMERIC ), 3 )
+                END po,
+            CASE
+                WHEN na + nc = 0 THEN
+                NULL ELSE round( CAST ( na * 100.0 / ( na + nc ) AS NUMERIC ), 3 )
+                END pod,
+            CASE
+                WHEN na + nb + nc = 0 THEN
+                NULL ELSE round( CAST ( C / ( na + nb + nc ) AS NUMERIC ), 3 )
+            END T
+        FROM
+            (
+            SELECT
+                area,
+                <if test="filed == 'forecaster'">
+                    ${filed},
+                </if>
+                SUM ( CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
+                SUM ( CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
+                SUM ( CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
+                SUM ( CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
+            FROM
+                public.tb_smpf_obtwarningsignalscore_qjsjc
+            WHERE
+                inputtime BETWEEN to_timestamp(#{start} || ' 00:00:00' , 'yyyy-MM-dd hh24:mi:ss')
+                AND to_timestamp(#{end} || ' 23:59:59' , 'yyyy-MM-dd hh24:mi:ss')
+                AND forecaster != '湖南省气象台'
+            GROUP BY
+                area
+                <if test="filed == 'forecaster'">
+                    ,${filed}
+                </if>
+            ) t1
+    </select>
+
+    <select id="getHeavyMonitorByArea" resultType="java.util.Map">
+         SELECT
+            area,
+            <if test="filed == 'forecaster'">
+                ${filed},
+            </if>
+            CASE
+                    WHEN na + nb + nc = 0 THEN
+                    NULL ELSE round( CAST ( na * 100.0 / ( na + nb + nc ) AS NUMERIC ), 3 )
+                END ts,
+            CASE
+                WHEN na + nb = 0 THEN
+                NULL ELSE round( CAST ( nb * 100.0 / ( na + nb ) AS NUMERIC ), 3 )
+                END far,
+            CASE
+                WHEN na + nc = 0 THEN
+                NULL ELSE round( CAST ( nc * 100.0 / ( na + nc ) AS NUMERIC ), 3 )
+                END po,
+            CASE
+                WHEN na + nc = 0 THEN
+                NULL ELSE round( CAST ( na * 100.0 / ( na + nc ) AS NUMERIC ), 3 )
+                END pod,
+            CASE
+                WHEN na + nb + nc = 0 THEN
+                NULL ELSE round( CAST ( C / ( na + nb + nc ) AS NUMERIC ), 3 )
+            END T
+        FROM
+            (
+            SELECT
+                area,
+                <if test="filed == 'forecaster'">
+                    ${filed},
+                </if>
+                SUM ( CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
+                SUM ( CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
+                SUM ( CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
+                SUM ( CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
+            FROM
+                public.tb_smpf_obtwarningsignalscore_qjsjc
+            WHERE
+                inputtime BETWEEN to_timestamp(#{start} || ' 00:00:00' , 'yyyy-MM-dd hh24:mi:ss')
+                AND to_timestamp(#{end} || ' 23:59:59' , 'yyyy-MM-dd hh24:mi:ss')
+                AND forecaster != '湖南省气象台'
+                AND "replace"(department, '气象台', '') = area
+            GROUP BY
+                area
+                <if test="filed == 'forecaster'">
+                    ,${filed}
+                </if>
+            ) t1
+    </select>
+
+    <select id="getHeavyMonitorByDistrict" resultType="java.util.Map">
+        SELECT
+            district,
+            <if test="filed == 'forecaster'">
+                forecaster,
+            </if>
+            CASE
+            WHEN na + nb + nc = 0 THEN
+            NULL ELSE round( CAST ( na * 100.0 / ( na + nb + nc ) AS NUMERIC ), 3 )
+            END ts,
+            CASE
+            WHEN na + nb = 0 THEN
+            NULL ELSE round( CAST ( nb * 100.0 / ( na + nb ) AS NUMERIC ), 3 )
+            END far,
+            CASE
+            WHEN na + nc = 0 THEN
+            NULL ELSE round( CAST ( nc * 100.0 / ( na + nc ) AS NUMERIC ), 3 )
+            END po,
+            CASE
+            WHEN na + nc = 0 THEN
+            NULL ELSE round( CAST ( na * 100.0 / ( na + nc ) AS NUMERIC ), 3 )
+            END pod,
+            CASE
+            WHEN na + nb + nc = 0 THEN
+            NULL ELSE round( CAST ( C / ( na + nb + nc ) AS NUMERIC ), 3 )
+            END T
+        FROM
+        (
+
+            SELECT
+                district,
+                <if test="filed == 'forecaster'">
+                    forecaster,
+                </if>
+                SUM ( CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
+                SUM ( CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
+                SUM ( CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
+                SUM ( CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
+            FROM
+                public.tb_smpf_obtwarningsignalscore_qjsjc
+            WHERE
+                inputtime BETWEEN to_timestamp(#{start} || ' 00:00:00' , 'yyyy-MM-dd hh24:mi:ss')
+                AND to_timestamp(#{end} || ' 23:59:59' , 'yyyy-MM-dd hh24:mi:ss')
+                AND area = #{area}
+                AND forecaster != '湖南省气象台'
+                AND "replace"(department, '气象台', '') != area
+            GROUP BY
+                district
+                <if test="filed == 'forecaster'">
+                    ,forecaster
+                </if>
+        ) t1
+    </select>
+
+    <select id="getHeavyMonitorByCountry" resultType="java.util.Map">
+         SELECT
+            district,
+            country,
+            CASE
+                    WHEN na + nb + nc = 0 THEN
+                    NULL ELSE round( CAST ( na * 100.0 / ( na + nb + nc ) AS NUMERIC ), 3 )
+                END ts,
+            CASE
+                WHEN na + nb = 0 THEN
+                NULL ELSE round( CAST ( nb * 100.0 / ( na + nb ) AS NUMERIC ), 3 )
+                END far,
+            CASE
+                WHEN na + nc = 0 THEN
+                NULL ELSE round( CAST ( nc * 100.0 / ( na + nc ) AS NUMERIC ), 3 )
+                END po,
+            CASE
+                WHEN na + nc = 0 THEN
+                NULL ELSE round( CAST ( na * 100.0 / ( na + nc ) AS NUMERIC ), 3 )
+                END pod,
+            CASE
+                WHEN na + nb + nc = 0 THEN
+                NULL ELSE round( CAST ( C / ( na + nb + nc ) AS NUMERIC ), 3 )
+            END T
+        FROM
+            (
+            SELECT
+                district,
+                country,
+                SUM ( CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
+                SUM ( CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
+                SUM ( CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
+                SUM ( CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
+            FROM
+                public.tb_smpf_obtwarningsignalscore_qjsjc
+            WHERE
+                inputtime BETWEEN to_timestamp(#{start} || ' 00:00:00' , 'yyyy-MM-dd hh24:mi:ss')
+                AND to_timestamp(#{end} || ' 23:59:59' , 'yyyy-MM-dd hh24:mi:ss')
+                AND area = #{area}
+            GROUP BY
+                district,
+                country
+            ) t1
+        ORDER BY
+            district
+    </select>
+
+    <select id="heavyDetail" resultType="java.util.Map">
+        SELECT
+            department,
+            forecaster,
+            to_char(inputtime, 'yyyy-mm-dd hh24:mi:ss') inputtime,
+            "level",
+            district,
+            leadtime_fj,
+            test_level,
+            to_char(fact_starttime_fj, 'yyyy-mm-dd hh24:mi:ss') fact_starttime_fj,
+            warningp_fj
+        FROM
+            public.tb_smpf_obtwarningsignalscore_qjsjc
+        WHERE
+            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+            AND area = #{area}
+            AND district = #{district}
+            <if test="level != 'all'">
+                AND level = #{level}
+            </if>
+    </select>
+
+    <select id="getHeavyDistrict" resultType="java.util.Map">
+        SELECT
+            area pro,
+            district5 "label"
+        FROM
+            PUBLIC.tb_obt
+        WHERE
+            district5 IS NOT NULL
+        GROUP BY
+            area,
+            district5
+        ORDER BY
+            area;
+    </select>
+
+    <select id="getCityWarningEff" resultType="java.util.Map">
+        <if test="field != 'forecaster'">
+            SELECT
+              '湖南省' area,
+              round( AVG ( score ), 1 ) score
+            FROM
+              public.tb_smpf_obtwarningsignalscore_yxxpj
+            WHERE
+                inputtime BETWEEN to_timestamp( #{start}, 'yyyy-mm-dd hh24:mi:ss' )
+                AND to_timestamp( #{end}, 'yyyy-mm-dd hh24:mi:ss' )
+                AND warningtype = #{warningType}
+                AND score != 99999
+--                 AND forecaster NOT LIKE '%气象台'
+            union all
+        </if>
+        SELECT
+            area,
+            <if test="field == 'forecaster'">
+                ${field},
+            </if>
+            round( AVG ( score ), 1 ) score
+        FROM
+            public.tb_smpf_obtwarningsignalscore_yxxpj
+        WHERE
+            inputtime BETWEEN to_timestamp( #{start}, 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end}, 'yyyy-mm-dd hh24:mi:ss' )
+            AND warningtype = #{warningType}
+            AND score != 99999
+--             AND forecaster NOT LIKE '%气象台'
+        GROUP BY
+            <if test="field == 'forecaster'">
+                ${field},
+            </if>
+            area
+        ORDER BY area
+    </select>
+
+    <select id="getDistrictsWarningEff" resultType="java.util.Map">
+        SELECT
+            #{area} area,
+            round( AVG ( score ), 1 ) score
+        FROM
+            PUBLIC.tb_smpf_obtwarningsignalscore_yxxpj
+        WHERE
+            inputtime BETWEEN to_timestamp( #{start}, 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end}, 'yyyy-mm-dd hh24:mi:ss' )
+            AND warningtype = #{warningType}
+            AND score != 99999
+            AND area = #{area} UNION ALL
+        SELECT
+            district area,
+            round( AVG ( score ), 1 ) score
+        FROM
+            PUBLIC.tb_smpf_obtwarningsignalscore_yxxpj
+        WHERE
+            inputtime BETWEEN to_timestamp( #{start}, 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end}, 'yyyy-mm-dd hh24:mi:ss' )
+            AND warningtype = #{warningType}
+            AND score != 99999
+            AND area = #{area}
+            AND district != #{area}
+        GROUP BY
+            district
+    </select>
+
+    <select id="cityDetailEff" resultType="java.util.Map">
+        SELECT
+            department,
+            forecaster,
+            to_char(inputtime, 'yyyy-mm-dd hh24:mi:ss') inputtime,
+            warningtype,
+            level,
+            area,
+            district,
+            score
+        FROM
+            PUBLIC.tb_smpf_obtwarningsignalscore_yxxpj
+        WHERE
+            inputtime BETWEEN to_timestamp( #{start}, 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end}, 'yyyy-mm-dd hh24:mi:ss' )
+            <if test="department != 'all'">
+                AND department = #{department}
+            </if>
+            AND warningtype = #{warningType}
+            <if test="level != 'all'">
+                AND level = #{level}
+            </if>
+        order by inputtime desc
+    </select>
+
+    <select id="getHeavyRainScore" resultType="java.util.Map">
+        SELECT
+        forecaster,
+        code,
+        '000' effetime,
+        round(sum(ts * scale) / sum(scale), 2) ts,
+        round(sum(pod * scale) / sum(scale), 2) pod,
+        round(sum(po * scale) / sum(scale), 2) po,
+        round(sum(far * scale) / sum(scale), 2) far
+        FROM
+        (SELECT
+        forecaster,
+        code,
+        effetime,
+        CASE
+        WHEN na + nb + nc = 0 THEN
+        NULL ELSE ROUND( na * 100.0 / ( na + nb + nc ), 2 )
+        END ts,
+        CASE
+        WHEN na + nc = 0 THEN
+        NULL ELSE ROUND( na * 100.0 / ( na + nc ), 2 )
+        END pod,
+        CASE
+        WHEN na + nc = 0 THEN
+        NULL ELSE ROUND( nc * 100.0 / ( na + nc ), 2 )
+        END po,
+        CASE
+        WHEN na + nb = 0 THEN
+        NULL ELSE ROUND( nb * 100.0 / ( na + nb ), 2 )
+        END far,
+        na,
+        nb,
+        nc,
+        CASE WHEN effetime = '006' THEN 6 WHEN effetime = '012' THEN 4 ELSE 0 END scale
+        FROM
+        (
+        SELECT
+        '湖南省' forecaster,
+        CODE,
+        effetime,
+        SUM ( CASE WHEN A.rs = 'NA' THEN 1 ELSE 0 END ) NA,
+        SUM ( CASE WHEN A.rs = 'NB' THEN 1 ELSE 0 END ) NB,
+        SUM ( CASE WHEN A.rs = 'NC' THEN 1 ELSE 0 END ) NC
+        FROM
+        tb_smpf_heavyshowerscore A,
+        tb_smpf_heavyshowerindex B
+        WHERE
+        A.showerindexkeyid = B.keyid
+        <if test="ftime != 'zh'">
+            AND to_char ( B.BEGIN, 'hh24' ) = #{ ftime }
+        </if>
+        AND B.BEGIN
+        BETWEEN to_timestamp(#{start}, 'yyyy-mm-dd hh24:mi:ss')
+        AND to_timestamp(#{end}, 'yyyy-mm-dd hh24:mi:ss')
+        AND code = '62'
+        GROUP BY
+        CODE,
+        effetime
+        HAVING
+        ( CODE IS NOT NULL ) UNION ALL
+        SELECT
+        forecaster,
+        CODE,
+        effetime,
+        SUM ( CASE WHEN A.rs = 'NA' THEN 1 ELSE 0 END ) NA,
+        SUM ( CASE WHEN A.rs = 'NB' THEN 1 ELSE 0 END ) NB,
+        SUM ( CASE WHEN A.rs = 'NC' THEN 1 ELSE 0 END ) NC
+        FROM
+        tb_smpf_heavyshowerscore A,
+        tb_smpf_heavyshowerindex B
+        WHERE
+        A.showerindexkeyid = B.keyid
+        <if test="ftime != 'zh'">
+            AND to_char ( B.BEGIN, 'hh24' ) = #{ ftime }
+        </if>
+        AND B.BEGIN
+        BETWEEN to_timestamp(#{start}, 'yyyy-mm-dd hh24:mi:ss')
+        AND to_timestamp(#{end}, 'yyyy-mm-dd hh24:mi:ss')
+        AND code = '62'
+        GROUP BY
+        CODE,
+        forecaster,
+        effetime
+        HAVING
+        ( CODE IS NOT NULL AND forecaster IS NOT NULL )
+        ) rs) t1
+        GROUP BY
+        forecaster,
+        code
+        union all
+        SELECT
+            forecaster,
+            code,
+            effetime,
+        CASE
+                WHEN na + nb + nc = 0 THEN
+                NULL ELSE ROUND( na * 100.0 / ( na + nb + nc ), 2 )
+            END ts,
+        CASE
+            WHEN na + nc = 0 THEN
+            NULL ELSE ROUND( na * 100.0 / ( na + nc ), 2 )
+            END pod,
+        CASE
+            WHEN na + nc = 0 THEN
+            NULL ELSE ROUND( nc * 100.0 / ( na + nc ), 2 )
+            END po,
+        CASE
+            WHEN na + nb = 0 THEN
+            NULL ELSE ROUND( nb * 100.0 / ( na + nb ), 2 )
+            END far
+        FROM
+            (
+            SELECT
+                '湖南省' forecaster,
+                CODE,
+                effetime,
+            SUM ( CASE WHEN A.rs = 'NA' THEN 1 ELSE 0 END ) NA,
+            SUM ( CASE WHEN A.rs = 'NB' THEN 1 ELSE 0 END ) NB,
+            SUM ( CASE WHEN A.rs = 'NC' THEN 1 ELSE 0 END ) NC
+        FROM
+            tb_smpf_heavyshowerscore A,
+            tb_smpf_heavyshowerindex B
+        WHERE
+            A.showerindexkeyid = B.keyid
+            <if test="ftime != 'zh'">
+                AND to_char ( B.BEGIN, 'hh24' ) = #{ ftime }
+            </if>
+                AND B.BEGIN
+                BETWEEN to_timestamp(#{start}, 'yyyy-mm-dd hh24:mi:ss')
+                AND to_timestamp(#{end}, 'yyyy-mm-dd hh24:mi:ss')
+                AND code = '62'
+                GROUP BY
+                    CODE,
+                    effetime
+                HAVING
+                    ( CODE IS NOT NULL ) UNION ALL
+                SELECT
+                    forecaster,
+                    CODE,
+                    effetime,
+                SUM ( CASE WHEN A.rs = 'NA' THEN 1 ELSE 0 END ) NA,
+            SUM ( CASE WHEN A.rs = 'NB' THEN 1 ELSE 0 END ) NB,
+            SUM ( CASE WHEN A.rs = 'NC' THEN 1 ELSE 0 END ) NC
+        FROM
+            tb_smpf_heavyshowerscore A,
+            tb_smpf_heavyshowerindex B
+        WHERE
+            A.showerindexkeyid = B.keyid
+            <if test="ftime != 'zh'">
+                AND to_char ( B.BEGIN, 'hh24' ) = #{ ftime }
+            </if>
+                AND B.BEGIN
+                    BETWEEN to_timestamp(#{start}, 'yyyy-mm-dd hh24:mi:ss')
+                    AND to_timestamp(#{end}, 'yyyy-mm-dd hh24:mi:ss')
+                    AND code = '62'
+                GROUP BY
+                    CODE,
+                    forecaster,
+                    effetime
+                HAVING
+                ( CODE IS NOT NULL AND forecaster IS NOT NULL )
+            ) rs
+    </select>
+
+    <select id="getThunderScore" resultType="java.util.Map">
+        SELECT
+        forecaster,
+        code,
+        '000' effetime,
+        round(sum(ts * scale) / sum(scale), 2) ts,
+        round(sum(pod * scale) / sum(scale), 2) pod,
+        round(sum(po * scale) / sum(scale), 2) po,
+        round(sum(far * scale) / sum(scale), 2) far
+        FROM
+        (SELECT
+        forecaster,
+        code,
+        effetime,
+        CASE
+        WHEN na + nb + nc = 0 THEN
+        NULL ELSE ROUND( na * 100.0 / ( na + nb + nc ), 2 )
+        END ts,
+        CASE
+        WHEN na + nc = 0 THEN
+        NULL ELSE ROUND( na * 100.0 / ( na + nc ), 2 )
+        END pod,
+        CASE
+        WHEN na + nc = 0 THEN
+        NULL ELSE ROUND( nc * 100.0 / ( na + nc ), 2 )
+        END po,
+        CASE
+        WHEN na + nb = 0 THEN
+        NULL ELSE ROUND( nb * 100.0 / ( na + nb ), 2 )
+        END far,
+        CASE WHEN effetime = '006' THEN 6 WHEN effetime = '012' THEN 4 ELSE 0 END scale
+        FROM
+        (
+        SELECT
+        '湖南省' forecaster,
+        CODE,
+        effetime,
+        SUM ( CASE WHEN A.rs = 'NA' THEN 1 ELSE 0 END ) NA,
+        SUM ( CASE WHEN A.rs = 'NB' THEN 1 ELSE 0 END ) NB,
+        SUM ( CASE WHEN A.rs = 'NC' THEN 1 ELSE 0 END ) NC
+        FROM
+        tb_smpf_heavyshowerscore A,
+        tb_smpf_heavyshowerindex B
+        WHERE
+        A.showerindexkeyid = B.keyid
+        <if test="ftime != 'zh'">
+            AND to_char ( B.BEGIN, 'hh24' ) = #{ ftime }
+        </if>
+        AND B.BEGIN
+        BETWEEN to_timestamp(#{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+        AND to_timestamp(#{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss')
+        AND code = '60'
+        GROUP BY
+        CODE,
+        effetime
+        HAVING
+        ( CODE IS NOT NULL ) UNION ALL
+        SELECT
+        forecaster,
+        CODE,
+        effetime,
+        SUM ( CASE WHEN A.rs = 'NA' THEN 1 ELSE 0 END ) NA,
+        SUM ( CASE WHEN A.rs = 'NB' THEN 1 ELSE 0 END ) NB,
+        SUM ( CASE WHEN A.rs = 'NC' THEN 1 ELSE 0 END ) NC
+        FROM
+        tb_smpf_heavyshowerscore A,
+        tb_smpf_heavyshowerindex B
+        WHERE
+        A.showerindexkeyid = B.keyid
+        <if test="ftime != 'zh'">
+            AND to_char ( B.BEGIN, 'hh24' ) = #{ ftime }
+        </if>
+        AND B.BEGIN
+        BETWEEN to_timestamp(#{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+        AND to_timestamp(#{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss')
+        AND code = '60'
+        GROUP BY
+        CODE,
+        forecaster,
+        effetime
+        HAVING
+        ( CODE IS NOT NULL AND forecaster IS NOT NULL )
+        ) rs
+        )t1
+        GROUP BY
+        forecaster,
+        code
+        union all
+        SELECT
+        forecaster,
+        code,
+        effetime,
+        CASE
+        WHEN na + nb + nc = 0 THEN
+        NULL ELSE ROUND( na * 100.0 / ( na + nb + nc ), 2 )
+        END ts,
+        CASE
+        WHEN na + nc = 0 THEN
+        NULL ELSE ROUND( na * 100.0 / ( na + nc ), 2 )
+        END pod,
+        CASE
+        WHEN na + nc = 0 THEN
+        NULL ELSE ROUND( nc * 100.0 / ( na + nc ), 2 )
+        END po,
+        CASE
+        WHEN na + nb = 0 THEN
+        NULL ELSE ROUND( nb * 100.0 / ( na + nb ), 2 )
+        END far
+        FROM
+        (
+        SELECT
+        '湖南省' forecaster,
+        CODE,
+        effetime,
+        SUM ( CASE WHEN A.rs = 'NA' THEN 1 ELSE 0 END ) NA,
+        SUM ( CASE WHEN A.rs = 'NB' THEN 1 ELSE 0 END ) NB,
+        SUM ( CASE WHEN A.rs = 'NC' THEN 1 ELSE 0 END ) NC
+        FROM
+        tb_smpf_heavyshowerscore A,
+        tb_smpf_heavyshowerindex B
+        WHERE
+        A.showerindexkeyid = B.keyid
+        <if test="ftime != 'zh'">
+            AND to_char ( B.BEGIN, 'hh24' ) = #{ ftime }
+        </if>
+        AND B.BEGIN
+        BETWEEN to_timestamp(#{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+        AND to_timestamp(#{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss')
+        AND code = '60'
+        GROUP BY
+        CODE,
+        effetime
+        HAVING
+        ( CODE IS NOT NULL ) UNION ALL
+        SELECT
+        forecaster,
+        CODE,
+        effetime,
+        SUM ( CASE WHEN A.rs = 'NA' THEN 1 ELSE 0 END ) NA,
+        SUM ( CASE WHEN A.rs = 'NB' THEN 1 ELSE 0 END ) NB,
+        SUM ( CASE WHEN A.rs = 'NC' THEN 1 ELSE 0 END ) NC
+        FROM
+        tb_smpf_heavyshowerscore A,
+        tb_smpf_heavyshowerindex B
+        WHERE
+        A.showerindexkeyid = B.keyid
+        <if test="ftime != 'zh'">
+            AND to_char ( B.BEGIN, 'hh24' ) = #{ ftime }
+        </if>
+        AND B.BEGIN
+        BETWEEN to_timestamp(#{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+        AND to_timestamp(#{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss')
+        AND code = '60'
+        GROUP BY
+        CODE,
+        forecaster,
+        effetime
+        HAVING
+        ( CODE IS NOT NULL AND forecaster IS NOT NULL )
+        ) rs
+    </select>
+
+    <select id="getThunderstormScore" resultType="java.util.Map">
+        SELECT
+        forecaster,
+        code,
+        effetime,
+        CASE
+        WHEN na + nb + nc = 0 THEN
+        NULL ELSE ROUND( na * 100.0 / ( na + nb + nc ), 2 )
+        END ts,
+        CASE
+        WHEN na + nc = 0 THEN
+        NULL ELSE ROUND( na * 100.0 / ( na + nc ), 2 )
+        END pod,
+        CASE
+        WHEN na + nc = 0 THEN
+        NULL ELSE ROUND( nc * 100.0 / ( na + nc ), 2 )
+        END po,
+        CASE
+        WHEN na + nb = 0 THEN
+        NULL ELSE ROUND( nb * 100.0 / ( na + nb ), 2 )
+        END far,
+        na,
+        nb,
+        nc
+        FROM
+        (
+        SELECT
+        '湖南省' forecaster,
+        CODE,
+        effetime,
+        SUM ( CASE WHEN A.rs = 'NA' THEN 1 ELSE 0 END ) NA,
+        SUM ( CASE WHEN A.rs = 'NB' THEN 1 ELSE 0 END ) NB,
+        SUM ( CASE WHEN A.rs = 'NC' THEN 1 ELSE 0 END ) NC
+        FROM
+        tb_smpf_heavyshowerscore A,
+        tb_smpf_heavyshowerindex B
+        WHERE
+        A.showerindexkeyid = B.keyid
+        <if test="ftime != 'zh'">
+            AND to_char ( B.BEGIN, 'hh24' ) = #{ ftime }
+        </if>
+        AND B.BEGIN
+        BETWEEN to_timestamp(#{start}, 'yyyy-mm-dd hh24:mi:ss')
+        AND to_timestamp(#{end}, 'yyyy-mm-dd hh24:mi:ss')
+        AND code = '61'
+        AND ishail = 1
+        GROUP BY
+        CODE,
+        effetime
+        HAVING
+        ( CODE IS NOT NULL ) UNION ALL
+        SELECT
+        forecaster,
+        CODE,
+        effetime,
+        SUM ( CASE WHEN A.rs = 'NA' THEN 1 ELSE 0 END ) NA,
+        SUM ( CASE WHEN A.rs = 'NB' THEN 1 ELSE 0 END ) NB,
+        SUM ( CASE WHEN A.rs = 'NC' THEN 1 ELSE 0 END ) NC
+        FROM
+        tb_smpf_heavyshowerscore A,
+        tb_smpf_heavyshowerindex B
+        WHERE
+        A.showerindexkeyid = B.keyid
+        <if test="ftime != 'zh'">
+            AND to_char ( B.BEGIN, 'hh24' ) = #{ ftime }
+        </if>
+        AND B.BEGIN
+        BETWEEN to_timestamp(#{start}, 'yyyy-mm-dd hh24:mi:ss')
+        AND to_timestamp(#{end}, 'yyyy-mm-dd hh24:mi:ss')
+        AND code = '61'
+        AND ishail = 1
+        GROUP BY
+        CODE,
+        forecaster,
+        effetime
+        HAVING
+        ( CODE IS NOT NULL AND forecaster IS NOT NULL )
+        ) rs
+    </select>
+
+    <select id="getHailScore" resultType="java.util.Map">
+        SELECT
+        forecaster,
+        code,
+        effetime,
+        CASE
+        WHEN na + nb + nc = 0 THEN
+        NULL ELSE ROUND( na * 100.0 / ( na + nb + nc ), 2 )
+        END ts,
+        CASE
+        WHEN na + nc = 0 THEN
+        NULL ELSE ROUND( na * 100.0 / ( na + nc ), 2 )
+        END pod,
+        CASE
+        WHEN na + nc = 0 THEN
+        NULL ELSE ROUND( nc * 100.0 / ( na + nc ), 2 )
+        END po,
+        CASE
+        WHEN na + nb = 0 THEN
+        NULL ELSE ROUND( nb * 100.0 / ( na + nb ), 2 )
+        END far,
+        na,
+        nb,
+        nc
+        FROM
+        (
+        SELECT
+        '湖南省' forecaster,
+        CODE,
+        effetime,
+        SUM ( CASE WHEN A.rs = 'NA' THEN 1 ELSE 0 END ) NA,
+        SUM ( CASE WHEN A.rs = 'NB' THEN 1 ELSE 0 END ) NB,
+        SUM ( CASE WHEN A.rs = 'NC' THEN 1 ELSE 0 END ) NC
+        FROM
+        tb_smpf_heavyshowerscore A,
+        tb_smpf_heavyshowerindex B
+        WHERE
+        A.showerindexkeyid = B.keyid
+        <if test="ftime != 'zh'">
+            AND to_char ( B.BEGIN, 'hh24' ) = #{ ftime }
+        </if>
+        AND B.BEGIN
+        BETWEEN to_timestamp(#{start}, 'yyyy-mm-dd hh24:mi:ss')
+        AND to_timestamp(#{end}, 'yyyy-mm-dd hh24:mi:ss')
+        AND code = '61'
+        AND ishail = 2
+        GROUP BY
+        CODE,
+        effetime
+        HAVING
+        ( CODE IS NOT NULL ) UNION ALL
+        SELECT
+        forecaster,
+        CODE,
+        effetime,
+        SUM ( CASE WHEN A.rs = 'NA' THEN 1 ELSE 0 END ) NA,
+        SUM ( CASE WHEN A.rs = 'NB' THEN 1 ELSE 0 END ) NB,
+        SUM ( CASE WHEN A.rs = 'NC' THEN 1 ELSE 0 END ) NC
+        FROM
+        tb_smpf_heavyshowerscore A,
+        tb_smpf_heavyshowerindex B
+        WHERE
+        A.showerindexkeyid = B.keyid
+        <if test="ftime != 'zh'">
+            AND to_char ( B.BEGIN, 'hh24' ) = #{ ftime }
+        </if>
+        AND B.BEGIN
+        BETWEEN to_timestamp(#{start}, 'yyyy-mm-dd hh24:mi:ss')
+        AND to_timestamp(#{end}, 'yyyy-mm-dd hh24:mi:ss')
+        AND code = '61'
+        AND ishail = 2
+        GROUP BY
+        CODE,
+        forecaster,
+        effetime
+        HAVING
+        ( CODE IS NOT NULL AND forecaster IS NOT NULL )
+        ) rs
+    </select>
+
+
+</mapper>
