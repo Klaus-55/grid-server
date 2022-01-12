@@ -288,7 +288,7 @@ public class ProvincialService {
         start = DateKit.format(DateKit.parse(start), "yyyy-MM-dd");
         end = DateKit.format(DateKit.parse(end), "yyyy-MM-dd");
         List<Map<String, Object>> warnList = provincialMapper.getCityWarningScore(start, end);
-//        List<Map<String, Object>> heavyList = provincialMapper.getCityHeavyScore(start, end);
+        List<Map<String, Object>> heavyList = provincialMapper.getCityHeavyScore(start, end);
         for (Map<String, Object> map : rsList) {
             if (Objects.equals(map.get("model"), "BECS")) continue;
             Map<String, Object> rsMap = new HashMap<>();
@@ -299,10 +299,10 @@ public class ProvincialService {
             //地市预警信号综合成绩
             Map<String, Object> warnRs = warnList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
             //地市强降水监测
-//            Map<String, Object> heavyRs = heavyList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
+            Map<String, Object> heavyRs = heavyList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
             rsMap.put("model", map.get("model"));
             rsMap.put("warning", Objects.isNull(warnRs) ? -999.0 : warnRs.get("zh"));
-//            rsMap.put("heavy", Objects.isNull(heavyRs) ? -999.0 : heavyRs.get("ts"));
+            rsMap.put("heavy", Objects.isNull(heavyRs) ? -999.0 : heavyRs.get("ts"));
             rsMap.put("zhzl", getZh(map));
             rsMap.put("zhjq", map.get("zhjq"));
             list.add(rsMap);
@@ -565,7 +565,7 @@ public class ProvincialService {
         for (int i = 0; i < list.size(); i++) {
             list.get(i).put(key + "_pm", i + 1);
         }
-        //预警信号根据评分办法，计算出的预报员成绩可能大于100，对此将成绩进行减法处理（提出了这个问题，暂时没给出解决方案，先这样进行处理）
+        //预警信号根据评分办法，计算出的预报员成绩可能大于100，对此将成绩进行正常化处理（提出了这个问题，暂时没给出解决方案，先这样进行处理）
         double maxWarning = Double.parseDouble(list.get(0).get(key).toString());
         if (maxWarning > 100.0) {
             double scale = maxWarning / 100;
@@ -607,19 +607,33 @@ public class ProvincialService {
             list.get(i).put(key3 + "_pm", i + 1);
         }
         getPerScore(list, key3, key3_per);
-        //计算综合成绩（预警信号 * 0.4 + 综合质量 * 0.2 + 综合技巧 * 0.2 + 20.0）
+        //强降水监测
+        String key4 = "heavy";
+        String key4_per = "heavy_per";
+        list.sort((a, b) -> {
+            double value1 = Double.parseDouble(a.get(key4).toString());
+            double value2 = Double.parseDouble(b.get(key4).toString());
+            return Double.compare(value2, value1);
+        });
+        for (int i = 0; i < list.size(); i++) {
+            list.get(i).put(key4 + "_pm", i + 1);
+        }
+        getPerScore(list, key4, key4_per);
+        //计算综合成绩（预警信号 * 0.4 + 综合质量 * 0.2 + 综合技巧 * 0.2 + 强降水监测 * 0.1 + 10.0）
         for (Map<String, Object> map : list) {
             double warning = Double.parseDouble(map.get(key_per).toString());
             double zhzl = Double.parseDouble(map.get(key2_per).toString());
             double zhjq = Double.parseDouble(map.get(key3_per).toString());
-            if (warning == -999.0 && zhzl == -999.0 && zhjq == -999.0) {
+            double heavy = Double.parseDouble(map.get(key4_per).toString());
+            if (warning == -999.0 && zhzl == -999.0 && zhjq == -999.0 && heavy == -999.0) {
                 map.put("zh", -999.0);
                 continue;
             }
             if (warning == -999) warning = 0.0;
             if (zhzl == -999) zhzl = 0.0;
             if (zhjq == -999) zhjq = 0.0;
-            double value = warning * 0.4 + zhzl * 0.2 + zhjq * 0.2 + 20.0;
+            if (heavy == -999) heavy = 0.0;
+            double value = warning * 0.4 + zhzl * 0.2 + zhjq * 0.2 + heavy * 0.1 + 10.0;
             map.put("zh", Arith.round(value, 3));
         }
         //根据综合成绩排名

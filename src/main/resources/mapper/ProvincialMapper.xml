@@ -1535,20 +1535,20 @@
             END model,
             CASE
                 WHEN na + nb + nc = 0 THEN
-                NULL ELSE round( CAST ( na * 100.0 / ( na + nb + nc ) AS NUMERIC ), 3 )
+                -999.0 ELSE round( CAST ( na * 100.0 / ( na + nb + nc ) AS NUMERIC ), 3 )
             END ts
         FROM
             (
             SELECT
                 area,
-                SUM ( CASE WHEN warningp_bfj = 'NA' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
-                SUM ( CASE WHEN warningp_bfj = 'NB' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
-                SUM ( CASE WHEN warningp_bfj = 'NC' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc
+                SUM ( CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
+                SUM ( CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
+                SUM ( CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc
             FROM
                 PUBLIC.tb_smpf_obtwarningsignalscore_qjsjc
             WHERE
-                TRIM ( '气象台' FROM department ) IN ( SELECT area FROM PUBLIC.tb_smpf_obtwarningsignalscore_qjsjc GROUP BY area )
-                AND inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+--                 TRIM ( '气象台' FROM department ) IN ( SELECT area FROM PUBLIC.tb_smpf_obtwarningsignalscore_qjsjc GROUP BY area )
+                inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
                 AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
             GROUP BY
             area
