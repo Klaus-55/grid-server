@@ -259,7 +259,10 @@
                         creator
         ) t1 LEFT JOIN tb_score_day_pre t2 ON
                 t1.wfdatetime = t2.wfdatetime
-                AND t2.wfhour IN (60, 72)
+                AND t2.wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
                 AND t2."type" = 'S1912'
         GROUP BY forecaster) t1
         FULL JOIN
@@ -288,7 +291,10 @@
                         creator
         ) t1 LEFT JOIN tb_score_day_tem t2 ON
                 t1.wfdatetime = t2.wfdatetime
-                AND t2.wfhour IN (60, 72)
+                AND t2.wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
                 AND t2."type" = 'S1912'
                 AND t2.facname = 'TMAX'
         GROUP BY forecaster) t2
@@ -319,7 +325,10 @@
                         creator
         ) t1 LEFT JOIN tb_score_day_tem t2 ON
                 t1.wfdatetime = t2.wfdatetime
-                AND t2.wfhour IN (60, 72)
+                AND t2.wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
                 AND t2."type" = 'S1912'
                 AND t2.facname = 'TMIN'
         GROUP BY forecaster) t3 ON
@@ -422,7 +431,10 @@
                         creator
         ) t1 LEFT JOIN tb_score_day_pre_yt t2 ON
                 t1.wfdatetime = t2.wfdatetime
-                AND t2.wfhour IN (60, 72)
+                AND t2.wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
                 AND t2."type" = 'S1912'
         GROUP BY forecaster) t1
         FULL JOIN
@@ -451,7 +463,10 @@
                         creator
         ) t1 LEFT JOIN tb_score_day_tem_yt t2 ON
                 t1.wfdatetime = t2.wfdatetime
-                AND t2.wfhour IN (60, 72)
+                AND t2.wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
                 AND t2."type" = 'S1912'
                 AND t2.facname = 'TMAX'
         GROUP BY forecaster) t2
@@ -482,7 +497,10 @@
                         creator
         ) t1 LEFT JOIN tb_score_day_tem_yt t2 ON
                 t1.wfdatetime = t2.wfdatetime
-                AND t2.wfhour IN (60, 72)
+                AND t2.wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
                 AND t2."type" = 'S1912'
                 AND t2.facname = 'TMIN'
         GROUP BY forecaster) t3 ON
@@ -585,7 +603,10 @@
                         creator
         ) t1 LEFT JOIN tb_score_day_pre t2 ON
                 t1.wfdatetime = t2.wfdatetime
-                AND t2.wfhour IN (60, 72)
+                AND t2.wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
                 AND t2."type" = 'S1912'
         GROUP BY forecaster) t1
         FULL JOIN
@@ -614,7 +635,10 @@
                         creator
         ) t1 LEFT JOIN tb_score_day_tem t2 ON
                 t1.wfdatetime = t2.wfdatetime
-                AND t2.wfhour IN (60, 72)
+                AND t2.wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
                 AND t2."type" = 'S1912'
                 AND t2.facname = 'TMAX'
         GROUP BY forecaster) t2
@@ -645,7 +669,10 @@
                         creator
         ) t1 LEFT JOIN tb_score_day_tem t2 ON
                 t1.wfdatetime = t2.wfdatetime
-                AND t2.wfhour IN (60, 72)
+                AND t2.wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
                 AND t2."type" = 'S1912'
                 AND t2.facname = 'TMIN'
         GROUP BY forecaster) t3 ON
@@ -748,7 +775,10 @@
                         creator
         ) t1 LEFT JOIN tb_score_day_pre_yt t2 ON
                 t1.wfdatetime = t2.wfdatetime
-                AND t2.wfhour IN (60, 72)
+                AND t2.wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
                 AND t2."type" = 'S1912'
         GROUP BY forecaster) t1
         FULL JOIN
@@ -777,7 +807,10 @@
                         creator
         ) t1 LEFT JOIN tb_score_day_tem_yt t2 ON
                 t1.wfdatetime = t2.wfdatetime
-                AND t2.wfhour IN (60, 72)
+                AND t2.wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
                 AND t2."type" = 'S1912'
                 AND t2.facname = 'TMAX'
         GROUP BY forecaster) t2
@@ -808,7 +841,10 @@
                         creator
         ) t1 LEFT JOIN tb_score_day_tem_yt t2 ON
                 t1.wfdatetime = t2.wfdatetime
-                AND t2.wfhour IN (60, 72)
+                AND t2.wfhour IN
+                <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
+                    CAST(#{item} AS INTEGER)
+                </foreach>
                 AND t2."type" = 'S1912'
                 AND t2.facname = 'TMIN'
         GROUP BY forecaster) t3 ON

@@ -22,13 +22,13 @@ public interface ProvincialMapper extends BaseMapper {
     @DS("fquality")
     Double getRainProgress(@Param("start") String start, @Param("end") String end, @Param("forecaster") String forecaster);
 
-    List<Map<String, Object>> getForemanScore(@Param("start") String start, @Param("end") String end);
+    List<Map<String, Object>> getForemanScore(@Param("start") String start, @Param("end") String end, @Param("wfhour") String wfhour);
 
-    List<Map<String, Object>> getForemanScoreYt(@Param("start") String start, @Param("end") String end);
+    List<Map<String, Object>> getForemanScoreYt(@Param("start") String start, @Param("end") String end, @Param("wfhour") String wfhour);
 
-    List<Map<String, Object>> getNightShiftScore(@Param("start") String start, @Param("end") String end);
+    List<Map<String, Object>> getNightShiftScore(@Param("start") String start, @Param("end") String end, @Param("wfhour") String wfhour);
 
-    List<Map<String, Object>> getNightShiftScoreYt(@Param("start") String start, @Param("end") String end);
+    List<Map<String, Object>> getNightShiftScoreYt(@Param("start") String start, @Param("end") String end, @Param("wfhour") String wfhour);
 
     @DS("duanlin")
     List<Map<String, Object>> getShortTermScore(@Param("start") String start, @Param("end") String end);

@@ -54,14 +54,14 @@ public class ProvincialService {
 
     public List<Map<String, Object>> getForemanScore(String start, String end) {
         List<Map<String, Object>> list = new ArrayList<>();
-        List<Map<String, Object>> rsList = provincialMapper.getForemanScore(start, end);
+        List<Map<String, Object>> rsList = getForemanScoreByFtime(start, end, false);
+//        List<Map<String, Object>> rsList = provincialMapper.getForemanScore(start, end);
         //省台结果，以此来算各个预报员的技巧
-        List<Map<String, Object>> ytList = provincialMapper.getForemanScoreYt(start, end);
+//        List<Map<String, Object>> ytList = provincialMapper.getForemanScoreYt(start, end);
+        List<Map<String, Object>> ytList = getForemanScoreByFtime(start, end, true);
         for (Map<String, Object> map : rsList) {
             Map<String, Object> ytRs = ytList.stream().filter(item -> Objects.equals(item.get("forecaster"), map.get("forecaster"))).findAny().orElse(null);
             if (Objects.isNull(ytRs)) continue;
-            map.put("zhjs", getTownZhValue(map));
-            ytRs.put("zhjs", getTownZhValue(ytRs));
             ExamineKit.getTownJq(map, ytRs);
             map.put("zhzl", getZh(map));
         }
@@ -71,43 +71,11 @@ public class ProvincialService {
             Map<String, Object> rsMap = new HashMap<>();
             rsMap.put("forecaster", map.get("forecaster"));
             rsMap.put("zhjq", map.get("zhjq"));
+            rsMap.put("zhjq_per", map.get("zhjq_per"));
             rsMap.put("zhzl", map.get("zhzl"));
-            double zhjq = Double.parseDouble(map.get("zhjq").toString());
-            double zhzl = Double.parseDouble(map.get("zhzl").toString());
-            if (Double.isNaN(zhjq) && zhzl == -999.0) {
-                rsMap.put("zh", null);
-            } else {
-                if (Double.isNaN(zhjq)) zhjq = 0.0;
-                if (zhzl == -999.0) zhzl = 0.0;
-                rsMap.put("zh", Arith.round((zhjq + zhzl) / 2, 2));
-            }
-            list.add(rsMap);
-        }
-        return list;
-    }
-
-    public List<Map<String, Object>> getNightShiftScore(String start, String end) {
-        List<Map<String, Object>> list = new ArrayList<>();
-        List<Map<String, Object>> rsList = provincialMapper.getNightShiftScore(start, end);
-        //省台结果，以此来算各个预报员的技巧
-        List<Map<String, Object>> ytList = provincialMapper.getNightShiftScoreYt(start, end);
-        for (Map<String, Object> map : rsList) {
-            Map<String, Object> ytRs = ytList.stream().filter(item -> Objects.equals(item.get("forecaster"), map.get("forecaster"))).findAny().orElse(null);
-            if (Objects.isNull(ytRs)) continue;
-            map.put("zhjs", getTownZhValue(map));
-            ytRs.put("zhjs", getTownZhValue(ytRs));
-            ExamineKit.getTownJq(map, ytRs);
-            map.put("zhzl", getZh(map));
-        }
-        resolveFnList(rsList);
-        getRankedRs(rsList);
-        for (Map<String, Object> map : rsList) {
-            Map<String, Object> rsMap = new HashMap<>();
-            rsMap.put("forecaster", map.get("forecaster"));
-            rsMap.put("zhjq", map.get("zhjq"));
-            rsMap.put("zhzl", map.get("zhzl"));
-            double zhjq = Double.parseDouble(map.get("zhjq").toString());
-            double zhzl = Double.parseDouble(map.get("zhzl").toString());
+            rsMap.put("zhzl_per", map.get("zhzl_per"));
+            double zhjq = Double.parseDouble(map.get("zhjq_per").toString());
+            double zhzl = Double.parseDouble(map.get("zhzl_per").toString());
             if (Double.isNaN(zhjq) && zhzl == -999.0) {
                 rsMap.put("zh", null);
             } else {
@@ -122,6 +90,155 @@ public class ProvincialService {
             double zh2 = Double.parseDouble(b.get("zh").toString());
             return Double.compare(zh2, zh1);
         });
+        for (int i = 0; i < list.size(); i++) {
+            list.get(i).put("pm", i + 1);
+        }
+        return list;
+    }
+
+    private List<Map<String,Object>> getForemanScoreByFtime(String start, String end, boolean isSt) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String[] factors = {"qyzql", "qyts", "genzql", "stormzql", "maxt",
+                "mint", "tminmae", "tmaxmae", "fj1zql", "fj2zql",
+                "fj3zql", "fj4zql", "fj5zql", "fj6zql", "ljo1zql", "ljo2zql",
+                "ljo3zql", "ljo4zql", "ljo5zql", "ljo6zql", "zhjs"};
+        int[] fTimes = {24, 48, 72};
+        Map<String, Map<String, Object>> sMap = new HashMap<>();
+        for (int wfhour : fTimes) {
+            String fhour = (wfhour - 12) + "," + wfhour;
+            List<Map<String, Object>> rsList;
+            if (!isSt) {
+                rsList = provincialMapper.getForemanScore(start, end, fhour);
+            } else {
+                rsList = provincialMapper.getForemanScoreYt(start, end, fhour);
+            }
+            for (Map<String, Object> map : rsList) {
+                double zhValue = getTownZhValue(map);
+                map.put("zhjs", Arith.round(zhValue, 1));
+                String forecaster = map.get("forecaster").toString();
+                Map<String, Object> insideMap = sMap.get(forecaster);
+                if (Objects.isNull(insideMap)) insideMap = new HashMap<>();
+                for (String factor : factors) {
+                    insideMap.put(factor + "_" + wfhour, map.get(factor));
+                }
+                sMap.put(forecaster, insideMap);
+            }
+        }
+        Set<Map.Entry<String, Map<String, Object>>> entries = sMap.entrySet();
+        Iterator<Map.Entry<String, Map<String, Object>>> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+            Map<String, Object> rsMap = new HashMap<>();
+            Map.Entry<String, Map<String, Object>> entry = iterator.next();
+            String forecaster = entry.getKey();
+            Map<String, Object> map = entry.getValue();
+            for (String factor : factors) {
+                String key_24 = factor + "_" + 24;
+                String key_48 = factor + "_" + 48;
+                String key_72 = factor + "_" + 72;
+                double d24 = map.get(key_24) == null ? -999 : Double.parseDouble(map.get(key_24).toString());
+                double d48 = map.get(key_48) == null ? -999 : Double.parseDouble(map.get(key_48).toString());
+                double d72 = map.get(key_72) == null ? -999 : Double.parseDouble(map.get(key_72).toString());
+                Double rs = get0_72(d24, d48, d72);
+                rsMap.put(factor, Arith.round(rs, 1));
+            }
+            rsMap.put("forecaster", forecaster);
+            list.add(rsMap);
+        }
+        return list;
+    }
+
+    public List<Map<String, Object>> getNightShiftScore(String start, String end) {
+        List<Map<String, Object>> list = new ArrayList<>();
+//        List<Map<String, Object>> rsList = provincialMapper.getNightShiftScore(start, end);
+        List<Map<String, Object>> rsList = getNightShiftScoreByFtime(start, end, false);
+        //省台结果，以此来算各个预报员的技巧
+//        List<Map<String, Object>> ytList = provincialMapper.getNightShiftScoreYt(start, end);
+        List<Map<String, Object>> ytList = getNightShiftScoreByFtime(start, end, true);
+        for (Map<String, Object> map : rsList) {
+            Map<String, Object> ytRs = ytList.stream().filter(item -> Objects.equals(item.get("forecaster"), map.get("forecaster"))).findAny().orElse(null);
+            if (Objects.isNull(ytRs)) continue;
+            ExamineKit.getTownJq(map, ytRs);
+            map.put("zhzl", getZh(map));
+        }
+        resolveFnList(rsList);
+        getRankedRs(rsList);
+        for (Map<String, Object> map : rsList) {
+            Map<String, Object> rsMap = new HashMap<>();
+            rsMap.put("forecaster", map.get("forecaster"));
+            rsMap.put("zhjq", map.get("zhjq"));
+            rsMap.put("zhjq_per", map.get("zhjq_per"));
+            rsMap.put("zhzl", map.get("zhzl"));
+            rsMap.put("zhzl_per", map.get("zhzl_per"));
+            double zhjq = Double.parseDouble(map.get("zhjq_per").toString());
+            double zhzl = Double.parseDouble(map.get("zhzl_per").toString());
+            if (Double.isNaN(zhjq) && zhzl == -999.0) {
+                rsMap.put("zh", null);
+            } else {
+                if (Double.isNaN(zhjq)) zhjq = 0.0;
+                if (zhzl == -999.0) zhzl = 0.0;
+                rsMap.put("zh", Arith.round((zhjq + zhzl) / 2, 2));
+            }
+            list.add(rsMap);
+        }
+        list.sort((a, b) -> {
+            double zh1 = Double.parseDouble(a.get("zh").toString());
+            double zh2 = Double.parseDouble(b.get("zh").toString());
+            return Double.compare(zh2, zh1);
+        });
+        for (int i = 0; i < list.size(); i++) {
+            list.get(i).put("pm", i + 1);
+        }
+        return list;
+    }
+
+    private List<Map<String,Object>> getNightShiftScoreByFtime(String start, String end, boolean isSt) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String[] factors = {"qyzql", "qyts", "genzql", "stormzql", "maxt",
+                "mint", "tminmae", "tmaxmae", "fj1zql", "fj2zql",
+                "fj3zql", "fj4zql", "fj5zql", "fj6zql", "ljo1zql", "ljo2zql",
+                "ljo3zql", "ljo4zql", "ljo5zql", "ljo6zql", "zhjs"};
+        int[] fTimes = {24, 48, 72};
+        Map<String, Map<String, Object>> sMap = new HashMap<>();
+        for (int wfhour : fTimes) {
+            String fhour = (wfhour - 12) + "," + wfhour;
+            List<Map<String, Object>> rsList;
+            if (!isSt) {
+                rsList = provincialMapper.getNightShiftScore(start, end, fhour);
+            } else {
+                rsList = provincialMapper.getNightShiftScoreYt(start, end, fhour);
+            }
+            for (Map<String, Object> map : rsList) {
+                double zhValue = getTownZhValue(map);
+                map.put("zhjs", Arith.round(zhValue, 1));
+                String forecaster = map.get("forecaster").toString();
+                Map<String, Object> insideMap = sMap.get(forecaster);
+                if (Objects.isNull(insideMap)) insideMap = new HashMap<>();
+                for (String factor : factors) {
+                    insideMap.put(factor + "_" + wfhour, map.get(factor));
+                }
+                sMap.put(forecaster, insideMap);
+            }
+        }
+        Set<Map.Entry<String, Map<String, Object>>> entries = sMap.entrySet();
+        Iterator<Map.Entry<String, Map<String, Object>>> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+            Map<String, Object> rsMap = new HashMap<>();
+            Map.Entry<String, Map<String, Object>> entry = iterator.next();
+            String forecaster = entry.getKey();
+            Map<String, Object> map = entry.getValue();
+            for (String factor : factors) {
+                String key_24 = factor + "_" + 24;
+                String key_48 = factor + "_" + 48;
+                String key_72 = factor + "_" + 72;
+                double d24 = map.get(key_24) == null ? -999 : Double.parseDouble(map.get(key_24).toString());
+                double d48 = map.get(key_48) == null ? -999 : Double.parseDouble(map.get(key_48).toString());
+                double d72 = map.get(key_72) == null ? -999 : Double.parseDouble(map.get(key_72).toString());
+                Double rs = get0_72(d24, d48, d72);
+                rsMap.put(factor, Arith.round(rs, 1));
+            }
+            rsMap.put("forecaster", forecaster);
+            list.add(rsMap);
+        }
         return list;
     }
 
@@ -1007,43 +1124,47 @@ public class ProvincialService {
 
     private void getRankedRs(List<Map<String, Object>> rsList) {
         if (rsList.size() == 0) return;
+        String key = "zhzl";
+        String key_per = "zhzl_per";
         rsList.sort((a, b) -> {
-            double zh1 = Double.parseDouble(a.get("zhzl").toString());
-            double zh2 = Double.parseDouble(b.get("zhzl").toString());
+            double zh1 = Double.parseDouble(a.get(key).toString());
+            double zh2 = Double.parseDouble(b.get(key).toString());
             return Double.compare(zh2, zh1);
         });
-        double zhzl = Double.parseDouble(rsList.get(0).get("zhzl").toString());
+        double zhzl = Double.parseDouble(rsList.get(0).get(key).toString());
         double scale = 100 / zhzl;
         for (int i = 0; i < rsList.size(); i++) {
             if (zhzl == 0) {
-                rsList.get(i).put("zhzl", -999.0);
+                rsList.get(i).put(key_per, -999.0);
                 continue;
             }
             if (i == 0) {
-                rsList.get(i).put("zhzl", 100);
+                rsList.get(i).put(key_per, 100);
             } else {
-                double value = Double.parseDouble(rsList.get(i).get("zhzl").toString());
-                rsList.get(i).put("zhzl", value * scale);
+                double value = Double.parseDouble(rsList.get(i).get(key).toString());
+                rsList.get(i).put(key_per, Arith.round(value * scale, 1));
             }
         }
+        String key2 = "zhjq";
+        String key2_per = "zhjq_per";
         rsList.sort((a, b) -> {
-            double zh1 = Double.parseDouble(a.get("zhjq").toString());
-            double zh2 = Double.parseDouble(b.get("zhjq").toString());
+            double zh1 = Double.parseDouble(a.get(key2).toString());
+            double zh2 = Double.parseDouble(b.get(key2).toString());
             return Double.compare(zh2, zh1);
         });
-        double zhjq = Double.parseDouble(rsList.get(0).get("zhjq").toString());
+        double zhjq = Double.parseDouble(rsList.get(0).get(key2).toString());
         scale = 100 / zhjq;
         for (int i = 0; i < rsList.size(); i++) {
             if (zhjq == 0) {
-                rsList.get(i).put("zhjq", Double.NaN);
+                rsList.get(i).put(key2_per, Double.NaN);
                 continue;
             }
             if (i == 0) {
-                rsList.get(i).put("zhjq", 100);
+                rsList.get(i).put(key2_per, 100);
             } else {
-                double value = Double.parseDouble(rsList.get(i).get("zhjq").toString());
-                double v1 = value * scale < -100.0 ? -100.0 : value * scale;
-                rsList.get(i).put("zhjq", v1);
+                double value = Double.parseDouble(rsList.get(i).get(key2).toString());
+                double v1 = value * scale < -100.0 ? -100.0 : Arith.round(value * scale, 1);
+                rsList.get(i).put(key2_per, v1);
             }
         }
     }
