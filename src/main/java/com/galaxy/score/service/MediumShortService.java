@@ -447,6 +447,7 @@ public class MediumShortService {
             Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
             if (Objects.isNull(proRs)) continue;
             map.put("zhjs", getTownZhValue(map));
+            map.put("zhzl", getZh2(map));
             proRs.put("zhjs", getTownZhValue(proRs));
             ExamineKit.getTownJq(map, proRs);
         }
@@ -460,6 +461,7 @@ public class MediumShortService {
             Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
             if (Objects.isNull(proRs)) continue;
             ExamineKit.getTownJq(map, proRs);
+            map.put("zhzl", getZh2(map));
         }
         return rsList;
     }
@@ -842,6 +844,26 @@ public class MediumShortService {
         if (!Objects.isNull(map.get("zhjs"))) zhjs = Double.parseDouble(map.get("zhjs").toString());
         if (!Objects.isNull(map.get("maxt"))) maxt = Double.parseDouble(map.get("maxt").toString());
         if (!Objects.isNull(map.get("mint"))) mint = Double.parseDouble(map.get("mint").toString());
+        if (qy_pc == -999.0) qy_pc = 0;
+        if (zhjs == -999.0) zhjs = 0;
+        if (maxt == -999.0) maxt = 0;
+        if (mint == -999.0) mint = 0;
+        return qy_pc * 0.3 + zhjs * 0.45 + maxt * 0.15 + mint * 0.1;
+    }
+
+    private double getZh2(Map<String, Object> map) {
+        double qy_pc = 0.0;
+        double zhjs = 0.0;
+        double maxt = 0.0;
+        double mint = 0.0;
+        if ((Objects.isNull(map.get("qyzql")) || Double.parseDouble(map.get("qyzql").toString()) == -999.0) &&
+                (Objects.isNull(map.get("zhjs")) || Double.parseDouble(map.get("zhjs").toString()) == -999.0) &&
+                (Objects.isNull(map.get("tmaxtzql")) || Double.parseDouble(map.get("tmaxtzql").toString()) == -999.0) &&
+                (Objects.isNull(map.get("tmintzql"))  || Double.parseDouble(map.get("tmintzql").toString()) == -999.0)) return -999.0;
+        if (!Objects.isNull(map.get("qyzql"))) qy_pc = Double.parseDouble(map.get("qyzql").toString());
+        if (!Objects.isNull(map.get("zhjs"))) zhjs = Double.parseDouble(map.get("zhjs").toString());
+        if (!Objects.isNull(map.get("tmaxtzql"))) maxt = Double.parseDouble(map.get("tmaxtzql").toString());
+        if (!Objects.isNull(map.get("tmintzql"))) mint = Double.parseDouble(map.get("tmintzql").toString());
         if (qy_pc == -999.0) qy_pc = 0;
         if (zhjs == -999.0) zhjs = 0;
         if (maxt == -999.0) maxt = 0;

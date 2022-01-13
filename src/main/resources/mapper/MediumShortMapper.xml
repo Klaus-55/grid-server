@@ -566,6 +566,7 @@
                 <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
                     CAST(#{item} AS INTEGER)
                 </foreach>
+                AND wfsrc != 'BECS'
         ) t1 FULL OUTER JOIN
         (
             SELECT
@@ -693,6 +694,7 @@
             <foreach collection="wfhour.split(',')" item="item" open="(" separator="," close=")">
                 CAST(#{item} AS INTEGER)
             </foreach>
+            AND wfsrc != 'BECS'
         GROUP BY
             wfsrc
             ) t1 FULL OUTER JOIN
