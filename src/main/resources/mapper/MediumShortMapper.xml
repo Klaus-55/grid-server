@@ -1513,7 +1513,7 @@
 
     <select id="rainScore2" resultType="java.util.Map">
         SELECT
-            wfdatetime,
+            substr(wfdatetime || '', 1, 10) wfdatetime,
             wfsrc,
             wfhour,
             CASE

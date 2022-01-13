@@ -1060,7 +1060,6 @@ public class MediumShortService {
         List<Map<String, Object>> list = mediumShortMapper.rainScore(start, end, fTime, type);
         Map<String, Map<String, Object>> zytMap = new HashMap<>();
         for (Map<String, Object> map : list) {
-            System.out.println(map);
             String wfsrc = map.get("wfsrc").toString();
             String zwname = modelMap.get(wfsrc);
             map.put("zwname", zwname == null ? wfsrc : zwname);
@@ -1107,22 +1106,77 @@ public class MediumShortService {
         return list;
     }
 
-    public List<Map<String, Object>> rainScore2(String start, String end, String fTime, String type) {
+    public Map<String, Object> rainScore2(String start, String end, String fTime, String type) {
+        Map<String, Object> rsMap = new HashMap<>();
         List<Map<String, Object>> rsList = new ArrayList<>();
         Date startDate = DateKit.parse(start);
         Date endDate = DateKit.parse(end);
         if (endDate.getTime() - startDate.getTime() > 48 * 60 * 60 *1000) endDate = DateKit.addHour(startDate, 48);
+        List<String> categories = new ArrayList<>();
         while (!startDate.after(endDate)) {
             int hour = (int) ((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60) + 24);
             String dateTime = DateKit.format(startDate, "yyyyMMdd");
+            if (Objects.equals(fTime, "zh")) {
+                categories.add(dateTime + "08");
+                categories.add(dateTime + "20");
+            } else {
+                categories.add(dateTime + fTime);
+            }
             List<Map<String, Object>> list = mediumShortMapper.rainScore2(dateTime, fTime, hour, type);
             rsList.addAll(list);
             startDate = DateKit.addHour(startDate, 24);
         }
-        System.out.println(rsList.size());
-//        System.out.println(DateKit.format(startDate, "yyyy-MM-dd HH:mm:ss"));
-//        System.out.println(DateKit.format(endDate, "yyyy-MM-dd HH:mm:ss"));
-        return rsList;
+        Map<String, String> modelMap = shortApproachService.getModelName();
+        Map<String, Map<String, Object>> zytMap = new HashMap<>();
+        for (Map<String, Object> map : rsList) {
+            String wfsrc = map.get("wfsrc").toString();
+            String zwname = modelMap.get(wfsrc);
+            map.put("zwname", zwname == null ? wfsrc : zwname);
+            map.put("zhjs", getZhValue(map));
+            if (Objects.equals("BABJ", wfsrc)) {
+                String wfhour = map.get("wfhour").toString();
+                String wfdatetime = map.get("wfdatetime").toString();
+                zytMap.put(wfdatetime + "_" + wfhour, map);
+            }
+        }
+        for (Map<String, Object> map : rsList) {
+            String wfsrc = map.get("wfsrc").toString();
+            String wfhour = map.get("wfhour").toString();
+            String wfdatetime = map.get("wfdatetime").toString();
+            Map<String, Object> zytRs = zytMap.get(wfdatetime + "_" + wfhour);
+            if (Objects.equals("BABJ", wfsrc) || zytRs == null) continue;
+            //晴雨技巧
+            if (!Objects.isNull(map.get("pc")) && !Objects.isNull(zytRs.get("pc"))) {
+                double pcf = Double.parseDouble(map.get("pc").toString());
+                double pcn = Double.parseDouble(zytRs.get("pc").toString());
+                double pc_jq = Arith.round((pcf - pcn) / (100 - pcn), 2);
+                map.put("pc_jq", pc_jq);
+            }
+            //一般性降水技巧
+            if (!Objects.isNull(map.get("ybx_pc")) && !Objects.isNull(zytRs.get("ybx_pc"))) {
+                double genf = Double.parseDouble(map.get("ybx_pc").toString());
+                double genn = Double.parseDouble(zytRs.get("ybx_pc").toString());
+                double gen_jq = Arith.round(genf - genn, 2);
+                map.put("gen_jq", gen_jq);
+            }
+            //暴雨以上技巧
+            if (!Objects.isNull(map.get("by_pc")) && !Objects.isNull(zytRs.get("by_pc"))) {
+                double stormf = Double.parseDouble(map.get("by_pc").toString());
+                double stormn = Double.parseDouble(zytRs.get("by_pc").toString());
+                double storm_jq = Arith.round(stormf - stormn, 2);
+                map.put("storm_jq", storm_jq);
+            }
+            //强降水技巧
+            if (!Objects.isNull(map.get("qjs_pc")) && !Objects.isNull(zytRs.get("qjs_pc"))) {
+                double heavyf = Double.parseDouble(map.get("qjs_pc").toString());
+                double heavyn = Double.parseDouble(zytRs.get("qjs_pc").toString());
+                double heavy_jq = Arith.round(heavyf - heavyn, 2);
+                map.put("heavy_jq", heavy_jq);
+            }
+        }
+        rsMap.put("categories", categories);
+        rsMap.put("data", rsList);
+        return rsMap;
     }
 
     //温度检验

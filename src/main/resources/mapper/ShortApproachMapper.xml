@@ -2066,10 +2066,10 @@
                 <if test="filed == 'forecaster'">
                     ${filed},
                 </if>
-                SUM ( CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
-                SUM ( CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
-                SUM ( CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
-                SUM ( CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
+                SUM ( CASE WHEN warningp_bfj = 'NA' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
+                SUM ( CASE WHEN warningp_bfj = 'NB' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
+                SUM ( CASE WHEN warningp_bfj = 'NC' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
+                SUM ( CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END + CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
             FROM
                 public.tb_smpf_obtwarningsignalscore_qjsjc
             WHERE
@@ -2117,10 +2117,10 @@
                 <if test="filed == 'forecaster'">
                     ${filed},
                 </if>
-                SUM ( CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
-                SUM ( CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
-                SUM ( CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
-                SUM ( CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
+                SUM ( CASE WHEN warningp_bfj = 'NA' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
+                SUM ( CASE WHEN warningp_bfj = 'NB' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
+                SUM ( CASE WHEN warningp_bfj = 'NC' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
+                SUM ( CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END + CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
             FROM
                 public.tb_smpf_obtwarningsignalscore_qjsjc
             WHERE
@@ -2170,10 +2170,10 @@
                 <if test="filed == 'forecaster'">
                     forecaster,
                 </if>
-                SUM ( CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
-                SUM ( CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
-                SUM ( CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
-                SUM ( CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
+                SUM ( CASE WHEN warningp_bfj = 'NA' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
+                SUM ( CASE WHEN warningp_bfj = 'NB' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
+                SUM ( CASE WHEN warningp_bfj = 'NC' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
+                SUM ( CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END + CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
             FROM
                 public.tb_smpf_obtwarningsignalscore_qjsjc
             WHERE
@@ -2219,10 +2219,10 @@
             SELECT
                 district,
                 country,
-                SUM ( CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
-                SUM ( CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
-                SUM ( CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
-                SUM ( CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
+                SUM ( CASE WHEN warningp_bfj = 'NA' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
+                SUM ( CASE WHEN warningp_bfj = 'NB' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
+                SUM ( CASE WHEN warningp_bfj = 'NC' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
+                SUM ( CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END + CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
             FROM
                 public.tb_smpf_obtwarningsignalscore_qjsjc
             WHERE

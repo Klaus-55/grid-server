@@ -210,8 +210,8 @@ public class MediumShortController {
     @GetMapping("/rainScore2/{start}/{end}/{fTime}/{type}")
     public Result rainScore2(@PathVariable String start, @PathVariable String end,
                             @PathVariable String fTime, @PathVariable String type) {
-        List<Map<String, Object>> list = mediumShortService.rainScore2(start, end, fTime, type);
-        return Result.success(list);
+        Map<String, Object> map = mediumShortService.rainScore2(start, end, fTime, type);
+        return Result.success(map);
     }
 
     @ApiOperation("温度检验")
