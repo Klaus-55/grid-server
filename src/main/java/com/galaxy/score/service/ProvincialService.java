@@ -332,6 +332,8 @@ public class ProvincialService {
         List<Map<String, Object>> stList = getCityScoreByFtime(gridStart, gridEnd, true);
         //地市预警信号结果
         List<Map<String, Object>> warnList = provincialMapper.getCityWarningScore(warnStart, warnEnd);
+        //强降水监测结果
+        List<Map<String, Object>> heavyList = provincialMapper.getCityHeavyScore(warnStart, warnEnd);
         for (Map<String, Object> map : rsList) {
             if (Objects.equals(map.get("model"), "BECS")) continue;
             Map<String, Object> rsMap = new HashMap<>();
@@ -341,8 +343,11 @@ public class ProvincialService {
             ExamineKit.getTownJq(map, proRs);
             //地市预警信号综合成绩
             Map<String, Object> warnRs = warnList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
+            //地市强降水监测
+            Map<String, Object> heavyRs = heavyList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
             rsMap.put("model", map.get("model"));
             rsMap.put("warning", Objects.isNull(warnRs) ? -999.0 : warnRs.get("zh"));
+            rsMap.put("heavy", Objects.isNull(heavyRs) ? -999.0 : heavyRs.get("ts"));
             rsMap.put("zhzl", getZh(map));
             rsMap.put("zhjq", map.get("zhjq"));
             list.add(rsMap);
