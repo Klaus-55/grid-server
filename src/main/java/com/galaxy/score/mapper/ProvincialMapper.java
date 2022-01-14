@@ -58,4 +58,7 @@ public interface ProvincialMapper extends BaseMapper {
     @DS("duanlin")
     List<Map<String, Object>> getForecasterWarningZh(@Param("start") String start, @Param("end") String end);
 
+    @DS("duanlin")
+    List<Map<String, Object>> getForecasterHeavy(@Param("start") String start, @Param("end") String end);
+
 }

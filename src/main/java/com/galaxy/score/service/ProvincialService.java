@@ -281,9 +281,10 @@ public class ProvincialService {
 
     public List<Map<String, Object>> getCityScore(String start, String end) {
         List<Map<String, Object>> list = new ArrayList<>();
-        List<Map<String, Object>> rsList = getCityScoreByFtime(start, end, false);
+//        List<Map<String, Object>> rsList = getCityScoreByFtime(start, end, false);
         //省台结果，以此来算各个地市的技巧
-        List<Map<String, Object>> stList = getCityScoreByFtime(start, end, true);
+//        List<Map<String, Object>> stList = getCityScoreByFtime(start, end, true);
+        List<Map<String, Object>> rsList = getCityScoreByFtime2(start, end);
         //地市预警信号结果
         start = DateKit.format(DateKit.parse(start), "yyyy-MM-dd");
         end = DateKit.format(DateKit.parse(end), "yyyy-MM-dd");
@@ -293,9 +294,9 @@ public class ProvincialService {
             if (Objects.equals(map.get("model"), "BECS")) continue;
             Map<String, Object> rsMap = new HashMap<>();
             //省台结果
-            Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
+//            Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
             //计算技巧
-            ExamineKit.getTownJq(map, proRs);
+//            ExamineKit.getTownJq(map, proRs);
             //地市预警信号综合成绩
             Map<String, Object> warnRs = warnList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
             //地市强降水监测
@@ -303,7 +304,8 @@ public class ProvincialService {
             rsMap.put("model", map.get("model"));
             rsMap.put("warning", Objects.isNull(warnRs) ? -999.0 : warnRs.get("zh"));
             rsMap.put("heavy", Objects.isNull(heavyRs) ? -999.0 : heavyRs.get("ts"));
-            rsMap.put("zhzl", getZh(map));
+//            rsMap.put("zhzl", getZh(map));
+            rsMap.put("zhzl", map.get("zhzl"));
             rsMap.put("zhjq", map.get("zhjq"));
             list.add(rsMap);
         }
@@ -327,9 +329,10 @@ public class ProvincialService {
         String warnEnd = "2021-11-30";
         String gridStart = "20210301";
         String gridEnd = "20211130";
-        List<Map<String, Object>> rsList = getCityScoreByFtime(gridStart, gridEnd, false);
+//        List<Map<String, Object>> rsList = getCityScoreByFtime(gridStart, gridEnd, false);
         //省台结果，以此来算各个地市的技巧
-        List<Map<String, Object>> stList = getCityScoreByFtime(gridStart, gridEnd, true);
+//        List<Map<String, Object>> stList = getCityScoreByFtime(gridStart, gridEnd, true);
+        List<Map<String, Object>> rsList = getCityScoreByFtime2(gridStart, gridEnd);
         //地市预警信号结果
         List<Map<String, Object>> warnList = provincialMapper.getCityWarningScore(warnStart, warnEnd);
         //强降水监测结果
@@ -338,9 +341,9 @@ public class ProvincialService {
             if (Objects.equals(map.get("model"), "BECS")) continue;
             Map<String, Object> rsMap = new HashMap<>();
             //省台结果
-            Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
+//            Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
             //计算技巧
-            ExamineKit.getTownJq(map, proRs);
+//            ExamineKit.getTownJq(map, proRs);
             //地市预警信号综合成绩
             Map<String, Object> warnRs = warnList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
             //地市强降水监测
@@ -348,7 +351,8 @@ public class ProvincialService {
             rsMap.put("model", map.get("model"));
             rsMap.put("warning", Objects.isNull(warnRs) ? -999.0 : warnRs.get("zh"));
             rsMap.put("heavy", Objects.isNull(heavyRs) ? -999.0 : heavyRs.get("ts"));
-            rsMap.put("zhzl", getZh(map));
+//            rsMap.put("zhzl", getZh(map));
+            rsMap.put("zhzl", map.get("zhzl"));
             rsMap.put("zhjq", map.get("zhjq"));
             list.add(rsMap);
         }
@@ -407,10 +411,70 @@ public class ProvincialService {
         return list;
     }
 
+    private List<Map<String, Object>> getCityScoreByFtime2(String start, String end) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String[] factors = {"zhjq", "qyjq", "genjq", "baoyujq", "zhjsjq", "maxtjq", "mintjq", "zhzl", "qyzql", "qyts", "genzql", "stormzql", "maxt",
+                "mint", "tminmae", "tmaxmae", "fj1zql", "fj2zql",
+                "fj3zql", "fj4zql", "fj5zql", "fj6zql", "ljo1zql", "ljo2zql",
+                "ljo3zql", "ljo4zql", "ljo5zql", "ljo6zql", "zhjs"};
+        int[] fTimes = {24, 48, 72};
+        Map<String, Map<String, Object>> sMap = new HashMap<>();
+        for (int wfhour : fTimes) {
+            String fhour = (wfhour - 12) + "," + wfhour;
+            List<Map<String, Object>> rsList = provincialMapper.getCityScore(start, end, fhour);
+            List<Map<String, Object>> stList = provincialMapper.getCityScoreSt(start, end, fhour);
+            //计算综合降水和综合质量
+            rsList.forEach(item -> {
+                item.put("zhjs", Arith.round(getTownZhValue(item), 1));
+                item.put("zhzl", getZh(item));
+            });
+            stList.forEach(item -> {
+                item.put("zhjs", Arith.round(getTownZhValue(item), 1));
+                item.put("zhzl", getZh(item));
+            });
+            for (Map<String, Object> map : rsList) {
+                //省台结果
+                Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
+                //计算技巧
+                ExamineKit.getTownJq(map, proRs);
+                String model = map.get("model").toString();
+                Map<String, Object> insideMap = sMap.get(model);
+                if (Objects.isNull(insideMap)) insideMap = new HashMap<>();
+                for (String factor : factors) {
+                    insideMap.put(factor + "_" + wfhour, map.get(factor));
+                }
+                sMap.put(model, insideMap);
+            }
+        }
+        Set<Map.Entry<String, Map<String, Object>>> entries = sMap.entrySet();
+        Iterator<Map.Entry<String, Map<String, Object>>> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+            Map<String, Object> rsMap = new HashMap<>();
+            Map.Entry<String, Map<String, Object>> entry = iterator.next();
+            String model = entry.getKey();
+            Map<String, Object> map = entry.getValue();
+            for (String factor : factors) {
+                String key_24 = factor + "_" + 24;
+                String key_48 = factor + "_" + 48;
+                String key_72 = factor + "_" + 72;
+                double d24 = map.get(key_24) == null ? -999 : Double.parseDouble(map.get(key_24).toString());
+                double d48 = map.get(key_48) == null ? -999 : Double.parseDouble(map.get(key_48).toString());
+                double d72 = map.get(key_72) == null ? -999 : Double.parseDouble(map.get(key_72).toString());
+                Double rs = get0_72(d24, d48, d72);
+                rsMap.put(factor, Double.isNaN(rs) ? -999.0 : Arith.round(rs, 3));
+            }
+            rsMap.put("model", model);
+            list.add(rsMap);
+        }
+        return list;
+    }
+
     public List<Map<String, Object>> getForecasterScore(String start, String end) {
-        List<Map<String, Object>> rsList = getForecasterScoreByFtime(start, end, false);
-        List<Map<String, Object>> stList = getForecasterScoreByFtime(start, end, true);
+//        List<Map<String, Object>> rsList = getForecasterScoreByFtime(start, end, false);
+//        List<Map<String, Object>> stList = getForecasterScoreByFtime(start, end, true);
+        List<Map<String, Object>> rsList = getForecasterScoreByFtime2(start, end);
         List<Map<String, Object>> warnList = provincialMapper.getForecasterWarningZh(start, end);
+        List<Map<String, Object>> heavyList = provincialMapper.getForecasterHeavy(start, end);
         //预报员集合 格式：{预报员}_{地市}
         Set<String> forecasters = new HashSet<>();
         rsList.forEach(item -> forecasters.add(item.get("forecaster").toString()));
@@ -422,16 +486,21 @@ public class ProvincialService {
             //预报员结果
             Map<String, Object> rs = rsList.stream().filter(item -> Objects.equals(item.get("forecaster"), forecaster)).findAny().orElse(null);
             //预报员结果（省台）
-            Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("forecaster"), forecaster)).findAny().orElse(null);
+//            Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("forecaster"), forecaster)).findAny().orElse(null);
             //计算技巧
-            ExamineKit.getTownJq(rs, proRs);
+//            ExamineKit.getTownJq(rs, proRs);
             //预报员预警信号综合成绩
             Map<String, Object> warnRs = warnList.stream().filter(item -> Objects.equals(item.get("forecaster"), foreDep[0]) && Objects.equals(item.get("area"), foreDep[1])).findAny().orElse(null);
+            //强降水监测成绩
+            Map<String, Object> heavyRs = heavyList.stream().filter(item -> Objects.equals(item.get("forecaster"), foreDep[0]) && Objects.equals(item.get("area"), foreDep[1])).findAny().orElse(null);
+            if (Objects.isNull(heavyRs)) heavyRs = heavyList.stream().filter(item -> Objects.equals(item.get("forecaster"), foreDep[1]) && Objects.equals(item.get("area"), foreDep[1])).findAny().orElse(null);
             rsMap.put("forecaster", foreDep[0]);
             rsMap.put("area", foreDep[1]);
             rsMap.put("warning", Objects.isNull(warnRs) ? -999.0 : warnRs.get("zh"));
-            rsMap.put("zhzl", getZh(rs));
+//            rsMap.put("zhzl", getZh(rs));
+            rsMap.put("zhzl", Objects.isNull(rs) ? -999.0 : rs.get("zhzl"));
             rsMap.put("zhjq", Objects.isNull(rs) ? Double.NaN : rs.get("zhjq"));
+            rsMap.put("heavy", Objects.isNull(heavyRs) ? -999.0 : heavyRs.get("ts"));
             rsMap.put("bc", Objects.isNull(rs) ? 0 : rs.get("bc"));
             rsMap.put("avgbc", Objects.isNull(rs) ? 0 : rs.get("avgbc"));
             list.add(rsMap);
@@ -447,9 +516,11 @@ public class ProvincialService {
         String gridEnd = "2021-11-30";
         String bcStart = "2021-01-01";
         String bcEnd = "2021-11-30";
-        List<Map<String, Object>> rsList = getForecasterScoreByFtime2(gridStart, gridEnd, bcStart, bcEnd, false);
-        List<Map<String, Object>> stList = getForecasterScoreByFtime2(gridStart, gridEnd, bcStart, bcEnd, true);
+//        List<Map<String, Object>> rsList = getForecasterScoreByFtime2(gridStart, gridEnd, bcStart, bcEnd, false);
+//        List<Map<String, Object>> stList = getForecasterScoreByFtime2(gridStart, gridEnd, bcStart, bcEnd, true);
+        List<Map<String, Object>> rsList = getForecasterScoreByFtime2(gridStart, gridEnd, bcStart, bcEnd);
         List<Map<String, Object>> warnList = provincialMapper.getForecasterWarningZh(warnStart, warnEnd);
+        List<Map<String, Object>> heavyList = provincialMapper.getForecasterHeavy(warnStart, warnEnd);
         //预报员集合 格式：{预报员}_{地市}
         Set<String> forecasters = new HashSet<>();
         rsList.forEach(item -> forecasters.add(item.get("forecaster").toString()));
@@ -461,16 +532,21 @@ public class ProvincialService {
             //预报员结果
             Map<String, Object> rs = rsList.stream().filter(item -> Objects.equals(item.get("forecaster"), forecaster)).findAny().orElse(null);
             //预报员结果（省台）
-            Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("forecaster"), forecaster)).findAny().orElse(null);
+//            Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("forecaster"), forecaster)).findAny().orElse(null);
             //计算技巧
-            ExamineKit.getTownJq(rs, proRs);
+//            ExamineKit.getTownJq(rs, proRs);
             //预报员预警信号综合成绩
             Map<String, Object> warnRs = warnList.stream().filter(item -> Objects.equals(item.get("forecaster"), foreDep[0]) && Objects.equals(item.get("area"), foreDep[1])).findAny().orElse(null);
+            //强降水监测成绩
+            Map<String, Object> heavyRs = heavyList.stream().filter(item -> Objects.equals(item.get("forecaster"), foreDep[0]) && Objects.equals(item.get("area"), foreDep[1])).findAny().orElse(null);
+            if (Objects.isNull(heavyRs)) heavyRs = heavyList.stream().filter(item -> Objects.equals(item.get("forecaster"), foreDep[1]) && Objects.equals(item.get("area"), foreDep[1])).findAny().orElse(null);
             rsMap.put("forecaster", foreDep[0]);
             rsMap.put("area", foreDep[1]);
             rsMap.put("warning", Objects.isNull(warnRs) ? -999.0 : warnRs.get("zh"));
-            rsMap.put("zhzl", getZh(rs));
+//            rsMap.put("zhzl", getZh(rs));
+            rsMap.put("zhzl", Objects.isNull(rs) ? Double.NaN : rs.get("zhzl"));
             rsMap.put("zhjq", Objects.isNull(rs) ? Double.NaN : rs.get("zhjq"));
+            rsMap.put("heavy", Objects.isNull(heavyRs) ? -999.0 : heavyRs.get("ts"));
             rsMap.put("bc", Objects.isNull(rs) ? 0 : rs.get("bc"));
             rsMap.put("avgbc", Objects.isNull(rs) ? 0 : rs.get("avgbc"));
             list.add(rsMap);
@@ -525,6 +601,68 @@ public class ProvincialService {
                 double d72 = map.get(key_72) == null ? -999 : Double.parseDouble(map.get(key_72).toString());
                 Double rs = get0_72(d24, d48, d72);
                 rsMap.put(factor, Arith.round(rs, 1));
+            }
+            rsMap.put("forecaster", forecaster);
+            rsMap.put("bc", map.get("bc"));
+            rsMap.put("avgbc", map.get("avgbc"));
+            list.add(rsMap);
+        }
+        return list;
+    }
+
+    private List<Map<String,Object>> getForecasterScoreByFtime2(String gridStart, String gridEnd, String bcStart, String bcEnd) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String[] factors = {"zhjq", "qyjq", "genjq", "baoyujq", "zhjsjq", "maxtjq", "mintjq", "zhzl", "qyzql", "qyts", "genzql", "stormzql", "maxt",
+                "mint", "tminmae", "tmaxmae", "fj1zql", "fj2zql",
+                "fj3zql", "fj4zql", "fj5zql", "fj6zql", "ljo1zql", "ljo2zql",
+                "ljo3zql", "ljo4zql", "ljo5zql", "ljo6zql", "zhjs"};
+        int[] fTimes = {24, 48, 72};
+        Map<String, Map<String, Object>> sMap = new HashMap<>();
+        for (int wfhour : fTimes) {
+            String fhour = (wfhour - 12) + "," + wfhour;
+            List<Map<String, Object>> rsList = provincialMapper.getForecasterScore2(gridStart, gridEnd, bcStart, bcEnd, fhour);
+            List<Map<String, Object>> stList = provincialMapper.getForecasterScoreSt2(gridStart, gridEnd, bcStart, bcEnd, fhour);
+            //计算综合降水和综合质量
+            rsList.forEach(item -> {
+                item.put("zhjs", Arith.round(getTownZhValue(item), 1));
+                item.put("zhzl", getZh(item));
+            });
+            stList.forEach(item -> {
+                item.put("zhjs", Arith.round(getTownZhValue(item), 1));
+                item.put("zhzl", getZh(item));
+            });
+            for (Map<String, Object> map : rsList) {
+                String forecaster = String.format("%s_%s", map.get("forecaster"), map.get("department"));
+                //省台结果
+                Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(String.format("%s_%s", item.get("forecaster"), item.get("department")), forecaster)).findAny().orElse(null);
+                //计算技巧
+                ExamineKit.getTownJq(map, proRs);
+                Map<String, Object> insideMap = sMap.get(forecaster);
+                if (Objects.isNull(insideMap)) insideMap = new HashMap<>();
+                insideMap.put("bc", map.get("bc"));
+                insideMap.put("avgbc", map.get("avgbc"));
+                for (String factor : factors) {
+                    insideMap.put(factor + "_" + wfhour, map.get(factor));
+                }
+                sMap.put(forecaster, insideMap);
+            }
+        }
+        Set<Map.Entry<String, Map<String, Object>>> entries = sMap.entrySet();
+        Iterator<Map.Entry<String, Map<String, Object>>> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+            Map<String, Object> rsMap = new HashMap<>();
+            Map.Entry<String, Map<String, Object>> entry = iterator.next();
+            String forecaster = entry.getKey();
+            Map<String, Object> map = entry.getValue();
+            for (String factor : factors) {
+                String key_24 = factor + "_" + 24;
+                String key_48 = factor + "_" + 48;
+                String key_72 = factor + "_" + 72;
+                double d24 = map.get(key_24) == null ? -999 : Double.parseDouble(map.get(key_24).toString());
+                double d48 = map.get(key_48) == null ? -999 : Double.parseDouble(map.get(key_48).toString());
+                double d72 = map.get(key_72) == null ? -999 : Double.parseDouble(map.get(key_72).toString());
+                Double rs = get0_72(d24, d48, d72);
+                rsMap.put(factor, Double.isNaN(rs) ? -999.0 : Arith.round(rs, 3));
             }
             rsMap.put("forecaster", forecaster);
             rsMap.put("bc", map.get("bc"));
@@ -1075,6 +1213,68 @@ public class ProvincialService {
                 double d72 = map.get(key_72) == null ? -999 : Double.parseDouble(map.get(key_72).toString());
                 Double rs = get0_72(d24, d48, d72);
                 rsMap.put(factor, Arith.round(rs, 1));
+            }
+            rsMap.put("forecaster", forecaster);
+            rsMap.put("bc", map.get("bc"));
+            rsMap.put("avgbc", map.get("avgbc"));
+            list.add(rsMap);
+        }
+        return list;
+    }
+
+    private List<Map<String, Object>> getForecasterScoreByFtime2(String start, String end) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String[] factors = {"zhjq", "qyjq", "genjq", "baoyujq", "zhjsjq", "maxtjq", "mintjq", "zhzl", "qyzql", "qyts", "genzql", "stormzql", "maxt",
+                "mint", "tminmae", "tmaxmae", "fj1zql", "fj2zql",
+                "fj3zql", "fj4zql", "fj5zql", "fj6zql", "ljo1zql", "ljo2zql",
+                "ljo3zql", "ljo4zql", "ljo5zql", "ljo6zql", "zhjs"};
+        int[] fTimes = {24, 48, 72};
+        Map<String, Map<String, Object>> sMap = new HashMap<>();
+        for (int wfhour : fTimes) {
+            String fhour = (wfhour - 12) + "," + wfhour;
+            List<Map<String, Object>> rsList = provincialMapper.getForecasterScore(start, end, fhour);
+            List<Map<String, Object>> stList = provincialMapper.getForecasterScoreSt(start, end, fhour);
+            //计算综合降水和综合质量
+            rsList.forEach(item -> {
+                item.put("zhjs", Arith.round(getTownZhValue(item), 1));
+                item.put("zhzl", getZh(item));
+            });
+            stList.forEach(item -> {
+                item.put("zhjs", Arith.round(getTownZhValue(item), 1));
+                item.put("zhzl", getZh(item));
+            });
+            for (Map<String, Object> map : rsList) {
+                String forecaster = String.format("%s_%s", map.get("forecaster"), map.get("department"));
+                //省台结果
+                Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(String.format("%s_%s", item.get("forecaster"), item.get("department")), forecaster)).findAny().orElse(null);
+                //计算技巧
+                ExamineKit.getTownJq(map, proRs);
+                Map<String, Object> insideMap = sMap.get(forecaster);
+                if (Objects.isNull(insideMap)) insideMap = new HashMap<>();
+                insideMap.put("bc", map.get("bc"));
+                insideMap.put("avgbc", map.get("avgbc"));
+                for (String factor : factors) {
+                    insideMap.put(factor + "_" + wfhour, map.get(factor));
+                }
+                sMap.put(forecaster, insideMap);
+            }
+        }
+        Set<Map.Entry<String, Map<String, Object>>> entries = sMap.entrySet();
+        Iterator<Map.Entry<String, Map<String, Object>>> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+            Map<String, Object> rsMap = new HashMap<>();
+            Map.Entry<String, Map<String, Object>> entry = iterator.next();
+            String forecaster = entry.getKey();
+            Map<String, Object> map = entry.getValue();
+            for (String factor : factors) {
+                String key_24 = factor + "_" + 24;
+                String key_48 = factor + "_" + 48;
+                String key_72 = factor + "_" + 72;
+                double d24 = map.get(key_24) == null ? -999 : Double.parseDouble(map.get(key_24).toString());
+                double d48 = map.get(key_48) == null ? -999 : Double.parseDouble(map.get(key_48).toString());
+                double d72 = map.get(key_72) == null ? -999 : Double.parseDouble(map.get(key_72).toString());
+                Double rs = get0_72(d24, d48, d72);
+                rsMap.put(factor, Double.isNaN(rs) ? -999.0 : Arith.round(rs, 3));
             }
             rsMap.put("forecaster", forecaster);
             rsMap.put("bc", map.get("bc"));

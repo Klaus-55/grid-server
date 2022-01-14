@@ -1541,9 +1541,10 @@
             (
             SELECT
                 area,
-                SUM ( CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
-                SUM ( CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
-                SUM ( CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc
+                SUM ( CASE WHEN warningp_bfj = 'NA' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
+                SUM ( CASE WHEN warningp_bfj = 'NB' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
+                SUM ( CASE WHEN warningp_bfj = 'NC' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
+                SUM ( CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END + CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
             FROM
                 PUBLIC.tb_smpf_obtwarningsignalscore_qjsjc
             WHERE
@@ -2419,4 +2420,98 @@
             area,
             forecaster
     </select>
+
+    <select id="getForecasterHeavy" resultType="java.util.Map">
+        SELECT
+            CASE WHEN area = '邵阳市' THEN '邵阳'
+            WHEN area = '张家界市' THEN '张家界'
+            WHEN area = '益阳市' THEN '益阳'
+            WHEN area = '怀化市' THEN '怀化'
+            WHEN area = '郴州市' THEN '郴州'
+            WHEN area = '衡阳市' THEN '衡阳'
+            WHEN area = '永州市' THEN '永州'
+            WHEN area = '岳阳市' THEN '岳阳'
+            WHEN area = '株洲市' THEN '株洲'
+            WHEN area = '湘西州' THEN '吉首'
+            WHEN area = '湘潭市' THEN '湘潭'
+            WHEN area = '长沙市' THEN '长沙'
+            WHEN area = '常德市' THEN '常德'
+            WHEN area = '娄底市' THEN '娄底' END forecaster,
+            CASE WHEN area = '邵阳市' THEN '邵阳'
+            WHEN area = '张家界市' THEN '张家界'
+            WHEN area = '益阳市' THEN '益阳'
+            WHEN area = '怀化市' THEN '怀化'
+            WHEN area = '郴州市' THEN '郴州'
+            WHEN area = '衡阳市' THEN '衡阳'
+            WHEN area = '永州市' THEN '永州'
+            WHEN area = '岳阳市' THEN '岳阳'
+            WHEN area = '株洲市' THEN '株洲'
+            WHEN area = '湘西州' THEN '吉首'
+            WHEN area = '湘潭市' THEN '湘潭'
+            WHEN area = '长沙市' THEN '长沙'
+            WHEN area = '常德市' THEN '常德'
+            WHEN area = '娄底市' THEN '娄底' END area,
+            CASE
+                WHEN na + nb + nc = 0 THEN
+                -999.0 ELSE round( CAST ( na * 100.0 / ( na + nb + nc ) AS NUMERIC ), 3 )
+            END ts
+        FROM
+            (
+            SELECT
+                area,
+                SUM ( CASE WHEN warningp_bfj = 'NA' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
+                SUM ( CASE WHEN warningp_bfj = 'NB' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
+                SUM ( CASE WHEN warningp_bfj = 'NC' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
+                SUM ( CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END + CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
+            FROM
+                PUBLIC.tb_smpf_obtwarningsignalscore_qjsjc
+            WHERE
+                "replace"(department, '气象台', '') = area
+                AND inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+            GROUP BY
+                area
+            ) t1
+        UNION ALL
+        SELECT
+            forecaster,
+            CASE WHEN area = '邵阳市' THEN '邵阳'
+            WHEN area = '张家界市' THEN '张家界'
+            WHEN area = '益阳市' THEN '益阳'
+            WHEN area = '怀化市' THEN '怀化'
+            WHEN area = '郴州市' THEN '郴州'
+            WHEN area = '衡阳市' THEN '衡阳'
+            WHEN area = '永州市' THEN '永州'
+            WHEN area = '岳阳市' THEN '岳阳'
+            WHEN area = '株洲市' THEN '株洲'
+            WHEN area = '湘西州' THEN '吉首'
+            WHEN area = '湘潭市' THEN '湘潭'
+            WHEN area = '长沙市' THEN '长沙'
+            WHEN area = '常德市' THEN '常德'
+            WHEN area = '娄底市' THEN '娄底' END area,
+            CASE
+                WHEN na + nb + nc = 0 THEN
+                -999.0 ELSE round( CAST ( na * 100.0 / ( na + nb + nc ) AS NUMERIC ), 3 )
+            END ts
+        FROM
+            (
+            SELECT
+                area,
+                forecaster,
+                SUM ( CASE WHEN warningp_bfj = 'NA' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NA' THEN 1.0 * warningp_score_fj ELSE 0 END ) na,
+                SUM ( CASE WHEN warningp_bfj = 'NB' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NB' THEN 1.0 * warningp_score_fj ELSE 0 END ) nb,
+                SUM ( CASE WHEN warningp_bfj = 'NC' THEN 1.0 * warningp_score_bfj ELSE 0 END + CASE WHEN warningp_fj = 'NC' THEN 1.0 * warningp_score_fj ELSE 0 END ) nc,
+                SUM ( CASE WHEN leadtime_bfj != 99999 THEN leadtime_bfj ELSE 0 END + CASE WHEN leadtime_fj != 99999 THEN leadtime_fj ELSE 0 END ) C
+            FROM
+                PUBLIC.tb_smpf_obtwarningsignalscore_qjsjc
+            WHERE
+                "replace"(department, '气象台', '') = area
+                AND inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-MM-dd hh24:mi:ss' )
+                AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-MM-dd hh24:mi:ss' )
+            GROUP BY
+                area,
+            forecaster
+            ) t1
+    </select>
+
 </mapper>

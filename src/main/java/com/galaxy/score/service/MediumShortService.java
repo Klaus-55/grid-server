@@ -455,15 +455,86 @@ public class MediumShortService {
     }
 
     private List<Map<String, Object>> townForecastScoreByFtime(String start, String end, String period, String obtType) {
-        List<Map<String, Object>> rsList = getTownRsByFtime(start, end, period, obtType, false);
-        List<Map<String, Object>> stList = getTownRsByFtime(start, end, period, obtType, true);
-        for (Map<String, Object> map : rsList) {
-            Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
-            if (Objects.isNull(proRs)) continue;
-            ExamineKit.getTownJq(map, proRs);
-            map.put("zhzl", getZh2(map));
+//        List<Map<String, Object>> rsList = getTownRsByFtime(start, end, period, obtType, false);
+//        List<Map<String, Object>> stList = getTownRsByFtime(start, end, period, obtType, true);
+//        for (Map<String, Object> map : rsList) {
+//            Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
+//            if (Objects.isNull(proRs)) continue;
+//            ExamineKit.getTownJq(map, proRs);
+//            map.put("zhzl", getZh2(map));
+//        }
+        return getTownRsByFtime2(start, end, period, obtType);
+    }
+
+    private List<Map<String, Object>> getTownRsByFtime2(String start, String end, String period, String obtType) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String[] factors = {"zhjq", "qyjq", "genjq", "baoyujq", "zhjsjq", "maxtjq", "mintjq", "qyzql", "qyts", "zhzl", "genzql", "stormzql", "tmaxozql",
+                "tmaxtzql", "tminozql", "tmintzql", "tminmae", "tmaxmae", "fj1zql", "fj2zql",
+                "fj3zql", "fj4zql", "fj5zql", "fj6zql", "ljo1zql", "ljo2zql",
+                "ljo3zql", "ljo4zql", "ljo5zql", "ljo6zql", "zhjs"};
+        int fHours = Integer.parseInt(period.substring(1));
+        int[] fTimes = new int[fHours / 24];
+        for (int i = 0; i < fTimes.length; i++) {
+            fTimes[i] = (i + 1) * 24;
         }
-        return rsList;
+        Map<String, Map<String, Object>> sMap = new HashMap<>();
+        for (int wfhour : fTimes) {
+            String fhour = (wfhour - 12) + "," + wfhour;
+            List<Map<String, Object>> rsList = mediumShortMapper.townForecastScore(start, end, fhour, obtType);
+            List<Map<String, Object>> stList = mediumShortMapper.townForecastScoreSt(start, end, fhour, obtType);
+            //计算综合降水和综合质量
+            rsList.forEach(item -> {
+                item.put("zhjs", Arith.round(getTownZhValue(item), 1));
+                item.put("zhzl", getZh2(item));
+            });
+            stList.forEach(item -> {
+                item.put("zhjs", Arith.round(getTownZhValue(item), 1));
+                item.put("zhzl", getZh2(item));
+            });
+            for (Map<String, Object> map : rsList) {
+                //省台结果
+                Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("model"), map.get("model"))).findAny().orElse(null);
+                //计算技巧
+                ExamineKit.getTownJq(map, proRs);
+                String model = map.get("model").toString();
+                Map<String, Object> insideMap = sMap.get(model);
+                if (Objects.isNull(insideMap)) insideMap = new HashMap<>();
+                for (String factor : factors) {
+                    insideMap.put(factor + "_" + wfhour, map.get(factor));
+                }
+                sMap.put(model, insideMap);
+            }
+        }
+        Set<Map.Entry<String, Map<String, Object>>> entries = sMap.entrySet();
+        Iterator<Map.Entry<String, Map<String, Object>>> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+            Map<String, Object> rsMap = new HashMap<>();
+            Map.Entry<String, Map<String, Object>> entry = iterator.next();
+            String model = entry.getKey();
+            Map<String, Object> map = entry.getValue();
+            for (String factor : factors) {
+                String key_24 = factor + "_" + 24;
+                String key_48 = factor + "_" + 48;
+                String key_72 = factor + "_" + 72;
+                String key_96 = factor + "_" + 96;
+                String key_120 = factor + "_" + 120;
+                double d24 = map.get(key_24) == null ? -999 : Double.parseDouble(map.get(key_24).toString());
+                double d48 = map.get(key_48) == null ? -999 : Double.parseDouble(map.get(key_48).toString());
+                double d72 = map.get(key_72) == null ? -999 : Double.parseDouble(map.get(key_72).toString());
+                double d96 = sMap.get(key_96) == null ? -999 : Double.parseDouble(sMap.get(key_96).toString());
+                double d120 = sMap.get(key_120) == null ? -999 : Double.parseDouble(sMap.get(key_120).toString());
+                Double rs;
+                if (Objects.equals("h72", period)) {
+                    rs = get0_72(d24, d48, d72);
+                } else {
+                    rs = get0_120(d24, d48, d72, d96, d120);
+                }
+                rsMap.put(factor, rs);
+            }
+            rsMap.put("model", model);
+            list.add(rsMap);
+        }
+        return list;
     }
 
     private List<Map<String, Object>> getTownRsByFtime(String start, String end, String period, String obtType, boolean isSt) {
@@ -534,14 +605,15 @@ public class MediumShortService {
     public List<Map<String, Object>> townForecasterScore(String start, String end, String period, String obtType, String wfsrc) {
         String cityName = getCityName(wfsrc);
         if (period.contains("h")) {
-            List<Map<String, Object>> rsList = getForecasterRsByFtime(start, end, period, obtType, wfsrc, cityName, false);
-            List<Map<String, Object>> stList = getForecasterRsByFtime(start, end, period, obtType, wfsrc, cityName, true);
-            for (Map<String, Object> map : rsList) {
-                Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("forecaster"), map.get("forecaster"))).findAny().orElse(null);
-                if (Objects.isNull(proRs)) continue;
-                ExamineKit.getTownJq(map, proRs);
-            }
-            return rsList;
+//            List<Map<String, Object>> rsList = getForecasterRsByFtime(start, end, period, obtType, wfsrc, cityName, false);
+//            List<Map<String, Object>> stList = getForecasterRsByFtime(start, end, period, obtType, wfsrc, cityName, true);
+//            for (Map<String, Object> map : rsList) {
+//                Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("forecaster"), map.get("forecaster"))).findAny().orElse(null);
+//                if (Objects.isNull(proRs)) continue;
+//                ExamineKit.getTownJq(map, proRs);
+//            }
+//            return rsList;
+            return getForecasterRsByFtime2(start, end, period, obtType, wfsrc, cityName);
         }
         int time = Integer.parseInt(period);
         String wfhour = (time - 12) + "," + time;
@@ -615,6 +687,77 @@ public class MediumShortService {
                     rs = get0_120(d24, d48, d72, d96, d120);
                 }
                 rsMap.put(factor, Arith.round(rs, 1));
+            }
+            rsMap.put("forecaster", forecaster);
+            list.add(rsMap);
+        }
+        return list;
+    }
+
+    private List<Map<String, Object>> getForecasterRsByFtime2(String start, String end, String period, String obtType, String wfsrc, String cityName) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String[] factors = {"zhjq", "qyjq", "genjq", "baoyujq", "zhjsjq", "maxtjq", "mintjq", "zhzl", "qyzql", "qyts", "genzql", "stormzql", "tmaxozql",
+                "tmaxtzql", "tminozql", "tmintzql", "tminmae", "tmaxmae", "fj1zql", "fj2zql",
+                "fj3zql", "fj4zql", "fj5zql", "fj6zql", "ljo1zql", "ljo2zql",
+                "ljo3zql", "ljo4zql", "ljo5zql", "ljo6zql", "zhjs"};
+        int fHours = Integer.parseInt(period.substring(1));
+        int[] fTimes = new int[fHours / 24];
+        for (int i = 0; i < fTimes.length; i++) {
+            fTimes[i] = (i + 1) * 24;
+        }
+        Map<String, Map<String, Object>> sMap = new HashMap<>();
+        for (int wfhour : fTimes) {
+            String fhour = (wfhour - 12) + "," + wfhour;
+            List<Map<String, Object>> rsList = mediumShortMapper.townForecasterScore(start, end, fhour, obtType, wfsrc, cityName);
+            List<Map<String, Object>> stList = mediumShortMapper.townForecasterScoreSt(start, end, fhour, obtType, wfsrc, cityName);
+            //计算综合降水和综合质量
+            rsList.forEach(item -> {
+                item.put("zhjs", Arith.round(getTownZhValue(item), 1));
+                item.put("zhzl", getZh2(item));
+            });
+            stList.forEach(item -> {
+                item.put("zhjs", Arith.round(getTownZhValue(item), 1));
+                item.put("zhzl", getZh2(item));
+            });
+            for (Map<String, Object> map : rsList) {
+                String forecaster = map.get("forecaster").toString();
+                //省台结果
+                Map<String, Object> proRs = stList.stream().filter(item -> Objects.equals(item.get("forecaster"), forecaster)).findAny().orElse(null);
+                //计算技巧
+                ExamineKit.getTownJq(map, proRs);
+                Map<String, Object> insideMap = sMap.get(forecaster);
+                if (Objects.isNull(insideMap)) insideMap = new HashMap<>();
+                for (String factor : factors) {
+                    insideMap.put(factor + "_" + wfhour, map.get(factor));
+                }
+                sMap.put(forecaster, insideMap);
+            }
+        }
+        Set<Map.Entry<String, Map<String, Object>>> entries = sMap.entrySet();
+        Iterator<Map.Entry<String, Map<String, Object>>> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+            Map<String, Object> rsMap = new HashMap<>();
+            Map.Entry<String, Map<String, Object>> entry = iterator.next();
+            String forecaster = entry.getKey();
+            Map<String, Object> map = entry.getValue();
+            for (String factor : factors) {
+                String key_24 = factor + "_" + 24;
+                String key_48 = factor + "_" + 48;
+                String key_72 = factor + "_" + 72;
+                String key_96 = factor + "_" + 96;
+                String key_120 = factor + "_" + 120;
+                double d24 = map.get(key_24) == null ? -999 : Double.parseDouble(map.get(key_24).toString());
+                double d48 = map.get(key_48) == null ? -999 : Double.parseDouble(map.get(key_48).toString());
+                double d72 = map.get(key_72) == null ? -999 : Double.parseDouble(map.get(key_72).toString());
+                double d96 = sMap.get(key_96) == null ? -999 : Double.parseDouble(sMap.get(key_96).toString());
+                double d120 = sMap.get(key_120) == null ? -999 : Double.parseDouble(sMap.get(key_120).toString());
+                Double rs;
+                if (Objects.equals("h72", period)) {
+                    rs = get0_72(d24, d48, d72);
+                } else {
+                    rs = get0_120(d24, d48, d72, d96, d120);
+                }
+                rsMap.put(factor, rs);
             }
             rsMap.put("forecaster", forecaster);
             list.add(rsMap);
