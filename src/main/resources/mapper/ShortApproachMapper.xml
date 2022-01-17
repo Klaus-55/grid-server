@@ -168,7 +168,7 @@
         SELECT
             forecaster,
             <choose>
-                <when test="method == 'all'">2
+                <when test="method == 'all'">
                     '所有级别' "level",
                 </when>
                 <otherwise>
@@ -774,211 +774,341 @@
             "level"
     </select>
 
+    <!--<select id="getProvincialFjZhByTypeLevel" resultType="java.util.Map">-->
+        <!--SELECT-->
+            <!--'湖南省' forecaster,-->
+            <!--ROUND( CAST ( SUM ( ts * typeweights ) / SUM ( COUNT ) AS NUMERIC ), 1 ) zh-->
+        <!--FROM-->
+            <!--(-->
+            <!--SELECT-->
+                <!--warningtype,-->
+                <!--SUM ( ts * levelweights ) / SUM ( COUNT ) ts,-->
+            <!--CASE-->
+                    <!--WHEN warningtype = '暴雨' THEN-->
+                    <!--1.5-->
+                    <!--WHEN warningtype = '暴雪' THEN-->
+                    <!--1.5-->
+                    <!--WHEN warningtype = '大风' THEN-->
+                    <!--1-->
+                    <!--WHEN warningtype = '大雾' THEN-->
+                    <!--1-->
+                    <!--WHEN warningtype = '霾' THEN-->
+                    <!--1-->
+                    <!--WHEN warningtype = '雷电' THEN-->
+                    <!--1-->
+                    <!--WHEN warningtype = '冰雹' THEN-->
+                    <!--1.5-->
+                    <!--WHEN warningtype = '雷雨大风' THEN-->
+                    <!--1.5-->
+                <!--END typeweights,-->
+        <!--CASE-->
+
+            <!--WHEN SUM ( ts * levelweights ) / SUM ( COUNT ) IS NULL THEN-->
+            <!--0 ELSE 1-->
+        <!--END COUNT-->
+        <!--FROM-->
+            <!--(-->
+            <!--SELECT-->
+                <!--warningtype,-->
+                <!--"level",-->
+            <!--CASE-->
+
+                    <!--WHEN na + nb + nc = 0 THEN-->
+                    <!--NULL ELSE na * 100.0 / ( na + nb + nc )-->
+                <!--END ts,-->
+        <!--CASE-->
+
+            <!--WHEN LEVEL = '红色' THEN-->
+            <!--1.8-->
+            <!--WHEN LEVEL = '橙色' THEN-->
+            <!--1.5-->
+            <!--WHEN LEVEL = '黄色' THEN-->
+            <!--1.2-->
+            <!--WHEN LEVEL = '蓝色' THEN-->
+            <!--1-->
+            <!--END levelweights,-->
+        <!--CASE-->
+
+            <!--WHEN na + nb + nc = 0 THEN-->
+            <!--0 ELSE 1-->
+        <!--END COUNT-->
+        <!--FROM-->
+            <!--(-->
+            <!--SELECT-->
+                <!--warningtype,-->
+                <!--test_level "level",-->
+            <!--SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,-->
+            <!--SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,-->
+            <!--SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc-->
+        <!--FROM-->
+            <!--PUBLIC.tb_smpf_obtwarningsignalscore-->
+        <!--WHERE-->
+            <!--inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )-->
+            <!--AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )-->
+            <!--AND warningtype = '暴雨'-->
+            <!--AND isfore = '0'-->
+            <!--AND forecaster != ''-->
+        <!--GROUP BY-->
+            <!--warningtype,-->
+            <!--test_level UNION ALL-->
+        <!--SELECT-->
+            <!--warningtype,-->
+            <!--test_level "level",-->
+            <!--SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,-->
+            <!--SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,-->
+            <!--SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc-->
+        <!--FROM-->
+            <!--PUBLIC.tb_smpf_obtwarningsignalscore-->
+        <!--WHERE-->
+            <!--inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )-->
+            <!--AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )-->
+            <!--AND warningtype != '暴雨'-->
+            <!--AND forecaster != ''-->
+        <!--GROUP BY-->
+            <!--warningtype,-->
+            <!--test_level-->
+            <!--) rs-->
+            <!--) rs-->
+        <!--GROUP BY-->
+            <!--warningtype-->
+            <!--) rs UNION ALL-->
+        <!--SELECT-->
+            <!--forecaster,-->
+            <!--ROUND( CAST ( SUM ( ts * typeweights ) / SUM ( COUNT ) AS NUMERIC ), 1 ) zh-->
+        <!--FROM-->
+            <!--(-->
+            <!--SELECT-->
+                <!--forecaster,-->
+                <!--warningtype,-->
+                <!--SUM ( ts * levelweights ) / SUM ( COUNT ) ts,-->
+            <!--CASE-->
+
+                    <!--WHEN warningtype = '暴雨' THEN-->
+                    <!--1.5-->
+                    <!--WHEN warningtype = '暴雪' THEN-->
+                    <!--1.5-->
+                    <!--WHEN warningtype = '大风' THEN-->
+                    <!--1-->
+                    <!--WHEN warningtype = '大雾' THEN-->
+                    <!--1-->
+                    <!--WHEN warningtype = '霾' THEN-->
+                    <!--1-->
+                    <!--WHEN warningtype = '雷电' THEN-->
+                    <!--1-->
+                    <!--WHEN warningtype = '冰雹' THEN-->
+                    <!--1.5-->
+                    <!--WHEN warningtype = '雷雨大风' THEN-->
+                    <!--1.5-->
+                <!--END typeweights,-->
+        <!--CASE-->
+
+            <!--WHEN SUM ( ts * levelweights ) / SUM ( COUNT ) IS NULL THEN-->
+            <!--0 ELSE 1-->
+        <!--END COUNT-->
+        <!--FROM-->
+            <!--(-->
+            <!--SELECT-->
+                <!--forecaster,-->
+                <!--warningtype,-->
+                <!--"level",-->
+            <!--CASE-->
+
+                    <!--WHEN na + nb + nc = 0 THEN-->
+                    <!--NULL ELSE na * 100 / ( na + nb + nc )-->
+                <!--END ts,-->
+        <!--CASE-->
+
+            <!--WHEN LEVEL = '红色' THEN-->
+            <!--1.8-->
+            <!--WHEN LEVEL = '橙色' THEN-->
+            <!--1.5-->
+            <!--WHEN LEVEL = '黄色' THEN-->
+            <!--1.2-->
+            <!--WHEN LEVEL = '蓝色' THEN-->
+            <!--1-->
+            <!--END levelweights,-->
+        <!--CASE-->
+
+            <!--WHEN na + nb + nc = 0 THEN-->
+            <!--0 ELSE 1-->
+        <!--END COUNT-->
+        <!--FROM-->
+            <!--(-->
+            <!--SELECT-->
+                <!--forecaster,-->
+                <!--warningtype,-->
+                <!--test_level "level",-->
+            <!--SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,-->
+            <!--SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,-->
+            <!--SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc-->
+        <!--FROM-->
+            <!--PUBLIC.tb_smpf_obtwarningsignalscore-->
+        <!--WHERE-->
+            <!--inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )-->
+            <!--AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )-->
+            <!--AND warningtype = '暴雨'-->
+            <!--AND isfore = '1'-->
+            <!--AND forecaster != ''-->
+        <!--GROUP BY-->
+            <!--forecaster,-->
+            <!--warningtype,-->
+            <!--test_level UNION ALL-->
+        <!--SELECT-->
+            <!--forecaster,-->
+            <!--warningtype,-->
+            <!--test_level "level",-->
+            <!--SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,-->
+            <!--SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,-->
+            <!--SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc-->
+        <!--FROM-->
+            <!--PUBLIC.tb_smpf_obtwarningsignalscore-->
+        <!--WHERE-->
+            <!--inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )-->
+            <!--AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )-->
+            <!--AND warningtype != '暴雨'-->
+            <!--AND forecaster != ''-->
+        <!--GROUP BY-->
+            <!--forecaster,-->
+            <!--warningtype,-->
+            <!--test_level-->
+            <!--) rs-->
+            <!--) rs-->
+        <!--GROUP BY-->
+            <!--forecaster,-->
+            <!--warningtype-->
+            <!--) rs-->
+        <!--GROUP BY-->
+            <!--forecaster-->
+    <!--</select>-->
+
     <select id="getProvincialFjZhByTypeLevel" resultType="java.util.Map">
         SELECT
-            '湖南省' forecaster,
-            ROUND( CAST ( SUM ( ts * typeweights ) / SUM ( COUNT ) AS NUMERIC ), 1 ) zh
-        FROM
-            (
-            SELECT
-                warningtype,
-                SUM ( ts * levelweights ) / SUM ( COUNT ) ts,
-            CASE
-                    WHEN warningtype = '暴雨' THEN
-                    1.5
-                    WHEN warningtype = '暴雪' THEN
-                    1.5
-                    WHEN warningtype = '大风' THEN
-                    1
-                    WHEN warningtype = '大雾' THEN
-                    1
-                    WHEN warningtype = '霾' THEN
-                    1
-                    WHEN warningtype = '雷电' THEN
-                    1
-                    WHEN warningtype = '冰雹' THEN
-                    1.5
-                    WHEN warningtype = '雷雨大风' THEN
-                    1.5
-                END typeweights,
-        CASE
-
-            WHEN SUM ( ts * levelweights ) / SUM ( COUNT ) IS NULL THEN
-            0 ELSE 1
-        END COUNT
-        FROM
-            (
-            SELECT
-                warningtype,
-                "level",
-            CASE
-
-                    WHEN na + nb + nc = 0 THEN
-                    NULL ELSE na * 100.0 / ( na + nb + nc )
-                END ts,
-        CASE
-
-            WHEN LEVEL = '红色' THEN
-            1.8
-            WHEN LEVEL = '橙色' THEN
-            1.5
-            WHEN LEVEL = '黄色' THEN
-            1.2
-            WHEN LEVEL = '蓝色' THEN
-            1
-            END levelweights,
-        CASE
-
-            WHEN na + nb + nc = 0 THEN
-            0 ELSE 1
-        END COUNT
-        FROM
-            (
-            SELECT
-                warningtype,
-                test_level "level",
-            SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,
-            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
-            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
-        FROM
-            PUBLIC.tb_smpf_obtwarningsignalscore
-        WHERE
-            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
-            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
-            AND warningtype = '暴雨'
-            AND isfore = '0'
-            AND forecaster != ''
-        GROUP BY
-            warningtype,
-            test_level UNION ALL
-        SELECT
-            warningtype,
-            test_level "level",
-            SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,
-            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
-            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
-        FROM
-            PUBLIC.tb_smpf_obtwarningsignalscore
-        WHERE
-            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
-            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
-            AND warningtype != '暴雨'
-            AND forecaster != ''
-        GROUP BY
-            warningtype,
-            test_level
-            ) rs
-            ) rs
-        GROUP BY
-            warningtype
-            ) rs UNION ALL
-        SELECT
-            forecaster,
-            ROUND( CAST ( SUM ( ts * typeweights ) / SUM ( COUNT ) AS NUMERIC ), 1 ) zh
-        FROM
-            (
-            SELECT
+                '湖南省' forecaster,
+                round( score * 100 / SCALE, 2 ) zh
+            FROM
+                (
+                SELECT
+                    SUM (
+                        CASE
+                            WHEN warningtype = '暴雨' THEN
+                            ts * 4
+                            WHEN warningtype = '雷雨大风' THEN
+                            ts * 3
+                            WHEN warningtype = '冰雹' THEN
+                            ts * 2
+                            WHEN warningtype = '雷电' THEN
+                            ts * 1 ELSE 0
+                        END
+                        ) score,
+                        SUM (
+                            CASE
+                                WHEN warningtype = '暴雨' THEN
+                                4
+                                WHEN warningtype = '雷雨大风' THEN
+                                3
+                                WHEN warningtype = '冰雹' THEN
+                                2
+                                WHEN warningtype = '雷电' THEN
+                                1 ELSE 0
+                            END
+                            ) SCALE
+                FROM
+                    (
+                    SELECT
+                        warningtype,
+                        CASE
+                            WHEN na + nb + nc = 0 THEN
+                            NULL ELSE round( na * 1.0 / ( na + nb + nc ), 2 )
+                        END ts
+                    FROM
+                        (
+                        SELECT
+                            warningtype,
+                            SUM ( CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END ) na,
+                            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+                            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+                        FROM
+                            tb_smpf_obtwarningsignalscore
+                        WHERE
+                            department = '湖南省气象台'
+                            AND forecaster != '湖南省气象台'
+                            AND forecaster != ''
+                            AND inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND warningtype IN ( '暴雨', '雷雨大风', '冰雹', '雷电' )
+                            AND test_level IN ( '红色', '橙色', '黄色' )
+                        GROUP BY
+                            warningtype
+                        ) t1
+                    ) rs
+                ) rs
+						UNION ALL
+						SELECT
                 forecaster,
-                warningtype,
-                SUM ( ts * levelweights ) / SUM ( COUNT ) ts,
-            CASE
-
-                    WHEN warningtype = '暴雨' THEN
-                    1.5
-                    WHEN warningtype = '暴雪' THEN
-                    1.5
-                    WHEN warningtype = '大风' THEN
-                    1
-                    WHEN warningtype = '大雾' THEN
-                    1
-                    WHEN warningtype = '霾' THEN
-                    1
-                    WHEN warningtype = '雷电' THEN
-                    1
-                    WHEN warningtype = '冰雹' THEN
-                    1.5
-                    WHEN warningtype = '雷雨大风' THEN
-                    1.5
-                END typeweights,
-        CASE
-
-            WHEN SUM ( ts * levelweights ) / SUM ( COUNT ) IS NULL THEN
-            0 ELSE 1
-        END COUNT
-        FROM
-            (
-            SELECT
-                forecaster,
-                warningtype,
-                "level",
-            CASE
-
-                    WHEN na + nb + nc = 0 THEN
-                    NULL ELSE na * 100 / ( na + nb + nc )
-                END ts,
-        CASE
-
-            WHEN LEVEL = '红色' THEN
-            1.8
-            WHEN LEVEL = '橙色' THEN
-            1.5
-            WHEN LEVEL = '黄色' THEN
-            1.2
-            WHEN LEVEL = '蓝色' THEN
-            1
-            END levelweights,
-        CASE
-
-            WHEN na + nb + nc = 0 THEN
-            0 ELSE 1
-        END COUNT
-        FROM
-            (
-            SELECT
-                forecaster,
-                warningtype,
-                test_level "level",
-            SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,
-            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
-            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
-        FROM
-            PUBLIC.tb_smpf_obtwarningsignalscore
-        WHERE
-            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
-            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
-            AND warningtype = '暴雨'
-            AND isfore = '1'
-            AND forecaster != ''
-        GROUP BY
-            forecaster,
-            warningtype,
-            test_level UNION ALL
-        SELECT
-            forecaster,
-            warningtype,
-            test_level "level",
-            SUM ( CASE WHEN warningp_fj = 'NA' THEN warningp_score_fj * 1 ELSE 0 END ) na,
-            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
-            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
-        FROM
-            PUBLIC.tb_smpf_obtwarningsignalscore
-        WHERE
-            inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
-            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
-            AND warningtype != '暴雨'
-            AND forecaster != ''
-        GROUP BY
-            forecaster,
-            warningtype,
-            test_level
-            ) rs
-            ) rs
-        GROUP BY
-            forecaster,
-            warningtype
-            ) rs
-        GROUP BY
-            forecaster
+                round( score * 100 / SCALE, 2 ) sg
+            FROM
+                (
+                SELECT
+                    forecaster,
+                    SUM (
+                        CASE
+                            WHEN warningtype = '暴雨' THEN
+                            ts * 4
+                            WHEN warningtype = '雷雨大风' THEN
+                            ts * 3
+                            WHEN warningtype = '冰雹' THEN
+                            ts * 2
+                            WHEN warningtype = '雷电' THEN
+                            ts * 1 ELSE 0
+                        END
+                        ) score,
+                        SUM (
+                            CASE
+                                WHEN warningtype = '暴雨' THEN
+                                4
+                                WHEN warningtype = '雷雨大风' THEN
+                                3
+                                WHEN warningtype = '冰雹' THEN
+                                2
+                                WHEN warningtype = '雷电' THEN
+                                1 ELSE 0
+                            END
+                            ) SCALE
+                FROM
+                    (
+                    SELECT
+                        forecaster,
+                        warningtype,
+                        CASE
+                            WHEN na + nb + nc = 0 THEN
+                            NULL ELSE round( na * 1.0 / ( na + nb + nc ), 2 )
+                        END ts
+                    FROM
+                        (
+                        SELECT
+                            forecaster,
+                            warningtype,
+                            SUM ( CASE WHEN warningp_fj = 'NA' THEN 1 ELSE 0 END ) na,
+                            SUM ( CASE WHEN warningp_fj = 'NB' THEN 1 ELSE 0 END ) nb,
+                            SUM ( CASE WHEN warningp_fj = 'NC' THEN 1 ELSE 0 END ) nc
+                        FROM
+                            tb_smpf_obtwarningsignalscore
+                        WHERE
+                            department = '湖南省气象台'
+                            AND forecaster != '湖南省气象台'
+                            AND forecaster != ''
+                            AND inputtime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+                            AND warningtype IN ( '暴雨', '雷雨大风', '冰雹', '雷电' )
+                            AND test_level IN ( '红色', '橙色', '黄色' )
+                        GROUP BY
+                            forecaster,
+                            warningtype
+                        ) t1
+                    ) rs
+                    GROUP BY
+                        forecaster
+                ) rs
     </select>
 
     <!--省级预警评定详情-->
