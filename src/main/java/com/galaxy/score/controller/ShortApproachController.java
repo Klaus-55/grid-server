@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
@@ -265,6 +266,12 @@ public class ShortApproachController {
     public Result getHeavyDistrict() {
         List<Map<String, Object>> list = shortApproachService.getHeavyDistrict();
         return Result.success(list);
+    }
+
+    @ApiOperation("评分办法文件下载")
+    @GetMapping("/download/{fileName}")
+    public void downloadFile(@PathVariable String fileName, HttpServletResponse response) {
+        shortApproachService.downloadFile(fileName, response);
     }
 
 }

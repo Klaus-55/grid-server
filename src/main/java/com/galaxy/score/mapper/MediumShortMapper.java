@@ -58,7 +58,7 @@ public interface MediumShortMapper extends BaseMapper {
     List<Map<String, Object>> rainScore(@Param("start") String start, @Param("end") String end,
                                         @Param("fTime") String fTime, @Param("type") String type);
 
-    List<Map<String, Object>> rainScore2(@Param("dateTime") String dateTime, @Param("fTime") String fTime, @Param("wfhour") int hour, @Param("type") String type);
+    List<Map<String, Object>> rainScore2(@Param("start") String start, @Param("end") String end, @Param("fTime") String fTime, @Param("type") String type);
 
     List<Map<String, Object>> tempScore(@Param("start") String start, @Param("end") String end, @Param("fTime") String fTime,
                                        @Param("type") String type, @Param("wfhours") String wfhours, @Param("facname") String facname);

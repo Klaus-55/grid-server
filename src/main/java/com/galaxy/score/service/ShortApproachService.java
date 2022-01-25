@@ -8,9 +8,11 @@ import com.galaxy.score.mapper.AttendanceMapper;
 import com.galaxy.score.mapper.ShortApproachMapper;
 import com.galaxy.score.model.Attendance;
 import com.galaxy.score.utils.Arith;
+import com.galaxy.score.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 
 /**
@@ -327,4 +329,8 @@ public class ShortApproachService {
     }
 
 
+    public void downloadFile(String fileName, HttpServletResponse response) {
+        String filePath = "E:\\usr\\local\\webapp\\grid-server\\files\\duanlin\\" + fileName;
+        FileUtils.downloadFile(response, filePath);
+    }
 }

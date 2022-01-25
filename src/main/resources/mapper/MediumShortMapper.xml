@@ -1585,12 +1585,13 @@
         FROM
             public_ybjs.tb_score_day_pre
         WHERE
-            substr( wfdatetime || '', 1, 8 ) = #{dateTime}
+            wfdatetime BETWEEN CAST(#{start} || '0000' AS BIGINT)
+            AND CAST(#{end} || '2359' AS BIGINT)
             <if test="fTime != 'zh'">
                 AND substr( wfdatetime || '', 9, 2 ) = #{fTime}
             </if>
             AND "type" = #{type}
-            AND wfhour = #{wfhour}
+            AND wfhour in (24,48,72)
             AND facname = 'ER24'
     </select>
 
@@ -1622,7 +1623,6 @@
             <if test="fTime != 'zh'">
                 AND substr( wfdatetime || '', 9, 2 ) = #{fTime}
             </if>
-            AND wfhours = CAST(#{wfhours} AS INTEGER)
             AND facname = #{facname}
             AND "type" = #{type}
         GROUP BY
@@ -1654,7 +1654,6 @@
             <if test="fTime != 'zh'">
                 AND substr( wfdatetime || '', 9, 2 ) = #{fTime}
             </if>
-            AND wfhours = CAST(#{wfhours} AS INTEGER)
             AND facname = #{facname}
             AND "type" = #{type}
         GROUP BY

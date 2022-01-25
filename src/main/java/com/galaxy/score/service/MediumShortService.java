@@ -1273,13 +1273,10 @@ public class MediumShortService {
 
     public Map<String, Object> rainScore2(String start, String end, String fTime, String type) {
         Map<String, Object> rsMap = new HashMap<>();
-        List<Map<String, Object>> rsList = new ArrayList<>();
         Date startDate = DateKit.parse(start);
         Date endDate = DateKit.parse(end);
-        if (endDate.getTime() - startDate.getTime() > 48 * 60 * 60 *1000) endDate = DateKit.addHour(startDate, 48);
         List<String> categories = new ArrayList<>();
         while (!startDate.after(endDate)) {
-            int hour = (int) ((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60) + 24);
             String dateTime = DateKit.format(startDate, "yyyyMMdd");
             if (Objects.equals(fTime, "zh")) {
                 categories.add(dateTime + "08");
@@ -1287,13 +1284,12 @@ public class MediumShortService {
             } else {
                 categories.add(dateTime + fTime);
             }
-            List<Map<String, Object>> list = mediumShortMapper.rainScore2(dateTime, fTime, hour, type);
-            rsList.addAll(list);
             startDate = DateKit.addHour(startDate, 24);
         }
+        List<Map<String, Object>> list = mediumShortMapper.rainScore2(start, end, fTime, type);
         Map<String, String> modelMap = shortApproachService.getModelName();
         Map<String, Map<String, Object>> zytMap = new HashMap<>();
-        for (Map<String, Object> map : rsList) {
+        for (Map<String, Object> map : list) {
             String wfsrc = map.get("wfsrc").toString();
             String zwname = modelMap.get(wfsrc);
             map.put("zwname", zwname == null ? wfsrc : zwname);
@@ -1304,7 +1300,7 @@ public class MediumShortService {
                 zytMap.put(wfdatetime + "_" + wfhour, map);
             }
         }
-        for (Map<String, Object> map : rsList) {
+        for (Map<String, Object> map : list) {
             String wfsrc = map.get("wfsrc").toString();
             String wfhour = map.get("wfhour").toString();
             String wfdatetime = map.get("wfdatetime").toString();
@@ -1340,7 +1336,7 @@ public class MediumShortService {
             }
         }
         rsMap.put("categories", categories);
-        rsMap.put("data", rsList);
+        rsMap.put("data", list);
         return rsMap;
     }
 
