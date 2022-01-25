@@ -127,7 +127,7 @@ public class MediumShortController {
         return Result.success(list);
     }
 
-    @ApiOperation("天气公报评分")
+    @ApiOperation("首席天气公报")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "start", value = "开始时间", example = "20210501"),
             @ApiImplicitParam(name = "end", value = "结束时间", example = "20210510")
@@ -183,51 +183,6 @@ public class MediumShortController {
                              @PathVariable String rtc, @PathVariable String item) {
         Map<String, Object> map = mediumShortService.modelScore(year, month, feHour, type, rtc, item);
         return Result.success(map);
-    }
-
-    @ApiOperation("降水检验")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "start", value = "开始时间", example = "20200103"),
-            @ApiImplicitParam(name = "end", value = "结束时间", example = "20210103"),
-            @ApiImplicitParam(name = "fTime", value = "预报时次", example = "zh", allowableValues = "zh,08,20"),
-            @ApiImplicitParam(name = "type", value = "检验产品", example = "BBBUSI", allowableValues = "BBBUSI,TECH"),
-//            @ApiImplicitParam(name = "wfhours", value = "检验时段", example = "72", allowableValues = "72,120")
-    })
-    @GetMapping("/rainScore/{start}/{end}/{fTime}/{type}")
-    public Result rainScore(@PathVariable String start, @PathVariable String end,
-                            @PathVariable String fTime, @PathVariable String type) {
-        List<Map<String, Object>> list = mediumShortService.rainScore(start, end, fTime, type);
-        return Result.success(list);
-    }
-
-    @ApiOperation("降水检验2")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "start", value = "开始时间", example = "20200103"),
-            @ApiImplicitParam(name = "end", value = "结束时间", example = "20210103"),
-            @ApiImplicitParam(name = "fTime", value = "预报时次", example = "zh", allowableValues = "zh,08,20"),
-            @ApiImplicitParam(name = "type", value = "检验产品", example = "BBBUSI", allowableValues = "BBBUSI,TECH")
-    })
-    @GetMapping("/rainScore2/{start}/{end}/{fTime}/{type}")
-    public Result rainScore2(@PathVariable String start, @PathVariable String end,
-                            @PathVariable String fTime, @PathVariable String type) {
-        Map<String, Object> map = mediumShortService.rainScore2(start, end, fTime, type);
-        return Result.success(map);
-    }
-
-    @ApiOperation("温度检验")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "start", value = "开始时间", example = "20200103"),
-            @ApiImplicitParam(name = "end", value = "结束时间", example = "20210103"),
-            @ApiImplicitParam(name = "fTime", value = "预报时次", example = "zh", allowableValues = "zh,08,20"),
-            @ApiImplicitParam(name = "type", value = "检验产品", example = "BBBUSI", allowableValues = "BBBUSI,TECH"),
-            @ApiImplicitParam(name = "wfhours", value = "检验时段", example = "72", allowableValues = "72,120"),
-            @ApiImplicitParam(name = "facname", value = "检验要素", example = "TMAX", allowableValues = "TMAX,TMIN"),
-    })
-    @GetMapping("/tempScore/{start}/{end}/{fTime}/{type}/{wfhours}/{facname}")
-    public Result tempScore(@PathVariable String start, @PathVariable String end, @PathVariable String fTime,
-                            @PathVariable String type, @PathVariable String wfhours, @PathVariable String facname) {
-        List<Map<String, Object>> list = mediumShortService.tempScore(start, end, fTime, type, wfhours, facname);
-        return Result.success(list);
     }
 
     @ApiOperation("站点实况数据获取")
@@ -308,7 +263,7 @@ public class MediumShortController {
             @ApiImplicitParam(name = "endDatetime", value = "结束日期", example = "2021082608")
     })
     @GetMapping("/chart_live_hour_grib")
-    public Result getChartLiveHourObtCal(Integer index, String table, String facname, String startDatetime, String endDatetime) {
+    public Result getChartLiveHourGrib(Integer index, String table, String facname, String startDatetime, String endDatetime) {
         List<Map<String, Object>> list = mediumShortService.getChartLiveHourGrib(index, table, facname, startDatetime, endDatetime);
         return Result.success(list);
     }
@@ -335,6 +290,51 @@ public class MediumShortController {
     @GetMapping("/getLiveGribData")
     public Result getLiveGribData(String ddatetime, String facname, String table) {
         List<Map<String, Object>> list = mediumShortService.getLiveGribData(ddatetime, facname, table);
+        return Result.success(list);
+    }
+
+    @ApiOperation("降水检验")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "start", value = "开始时间", example = "20200103"),
+            @ApiImplicitParam(name = "end", value = "结束时间", example = "20210103"),
+            @ApiImplicitParam(name = "fTime", value = "预报时次", example = "zh", allowableValues = "zh,08,20"),
+            @ApiImplicitParam(name = "type", value = "检验产品", example = "BBBUSI", allowableValues = "BBBUSI,TECH"),
+//            @ApiImplicitParam(name = "wfhours", value = "检验时段", example = "72", allowableValues = "72,120")
+    })
+    @GetMapping("/rainScore/{start}/{end}/{fTime}/{type}")
+    public Result rainScore(@PathVariable String start, @PathVariable String end,
+                            @PathVariable String fTime, @PathVariable String type) {
+        List<Map<String, Object>> list = mediumShortService.rainScore(start, end, fTime, type);
+        return Result.success(list);
+    }
+
+    @ApiOperation("降水检验2")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "start", value = "开始时间", example = "20200103"),
+            @ApiImplicitParam(name = "end", value = "结束时间", example = "20210103"),
+            @ApiImplicitParam(name = "fTime", value = "预报时次", example = "zh", allowableValues = "zh,08,20"),
+            @ApiImplicitParam(name = "type", value = "检验产品", example = "BBBUSI", allowableValues = "BBBUSI,TECH")
+    })
+    @GetMapping("/rainScore2/{start}/{end}/{fTime}/{type}")
+    public Result rainScore2(@PathVariable String start, @PathVariable String end,
+                             @PathVariable String fTime, @PathVariable String type) {
+        Map<String, Object> map = mediumShortService.rainScore2(start, end, fTime, type);
+        return Result.success(map);
+    }
+
+    @ApiOperation("温度检验")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "start", value = "开始时间", example = "20200103"),
+            @ApiImplicitParam(name = "end", value = "结束时间", example = "20210103"),
+            @ApiImplicitParam(name = "fTime", value = "预报时次", example = "zh", allowableValues = "zh,08,20"),
+            @ApiImplicitParam(name = "type", value = "检验产品", example = "BBBUSI", allowableValues = "BBBUSI,TECH"),
+            @ApiImplicitParam(name = "wfhours", value = "检验时段", example = "72", allowableValues = "72,120"),
+            @ApiImplicitParam(name = "facname", value = "检验要素", example = "TMAX", allowableValues = "TMAX,TMIN"),
+    })
+    @GetMapping("/tempScore/{start}/{end}/{fTime}/{type}/{wfhours}/{facname}")
+    public Result tempScore(@PathVariable String start, @PathVariable String end, @PathVariable String fTime,
+                            @PathVariable String type, @PathVariable String wfhours, @PathVariable String facname) {
+        List<Map<String, Object>> list = mediumShortService.tempScore(start, end, fTime, type, wfhours, facname);
         return Result.success(list);
     }
 

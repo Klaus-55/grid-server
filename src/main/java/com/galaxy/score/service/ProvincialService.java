@@ -5,9 +5,13 @@ import com.ga.common.kit.DateKit;
 import com.galaxy.score.mapper.ProvincialMapper;
 import com.galaxy.score.utils.Arith;
 import com.galaxy.score.utils.ExamineKit;
+import com.galaxy.score.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -21,6 +25,9 @@ public class ProvincialService {
 
     @Autowired
     private ProvincialMapper provincialMapper;
+
+    @Value("${word.path}")
+    private String wordPath;
 
     public List<Map<String, Object>> getChiefScore(String start, String end) {
         List<Map<String, Object>> rsList = new ArrayList<>();
@@ -1584,5 +1591,10 @@ public class ProvincialService {
         if (mint == -999.0) mint = 0;
         double zhzl = qy_pc * 0.3 + zhjs * 0.45 + maxt * 0.15 + mint * 0.1;
         return Arith.round(zhzl, 3);
+    }
+
+    public void downloadFile(String fileName, HttpServletResponse response) {
+        String filePath = wordPath + File.separator + "shengji" + File.separator + fileName;
+        FileUtils.downloadFile(response, filePath);
     }
 }

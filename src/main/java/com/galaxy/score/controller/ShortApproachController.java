@@ -31,14 +31,6 @@ public class ShortApproachController {
     @Autowired
     private ShortApproachService shortApproachService;
 
-    @ApiOperation("登陆验证")
-    @GetMapping("/login")
-    public void login(HttpServletRequest request, String username, String password) {
-        HttpSession session = request.getSession();
-
-        session.setAttribute("username", "55555");
-    }
-
     @ApiOperation("降水检验")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "start", value = "开始时间", example = "20210701"),
@@ -69,13 +61,6 @@ public class ShortApproachController {
                            @PathVariable String wfinterval, @PathVariable String product) {
         List<Map<String, Object>> list = shortApproachService.temScore(start, end, ftime, wfinterval, product);
         return Result.success(list);
-    }
-
-    @ApiOperation("分页查询值班信息")
-    @GetMapping("/attendanceList")
-    public Result getAttendanceList(Page<Attendance> page) {
-        page = shortApproachService.findList(page);
-        return Result.success(page);
     }
 
     @ApiOperation("强降水检验")

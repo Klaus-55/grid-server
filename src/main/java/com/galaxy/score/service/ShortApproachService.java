@@ -10,9 +10,11 @@ import com.galaxy.score.model.Attendance;
 import com.galaxy.score.utils.Arith;
 import com.galaxy.score.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.util.*;
 
 /**
@@ -27,6 +29,9 @@ public class ShortApproachService {
 
     @Autowired
     private AttendanceMapper attendanceMapper;
+
+    @Value("${word.path}")
+    private String wordPath;
 
     //降水检验
     public List<Map<String, Object>> rainScore(String start, String end, String ftime, String wfinterval, String product) {
@@ -330,7 +335,8 @@ public class ShortApproachService {
 
 
     public void downloadFile(String fileName, HttpServletResponse response) {
-        String filePath = "E:\\usr\\local\\webapp\\grid-server\\files\\duanlin\\" + fileName;
+        String filePath = wordPath + File.separator + "duanlin" + File.separator + fileName;
+        System.out.println(wordPath);
         FileUtils.downloadFile(response, filePath);
     }
 }
