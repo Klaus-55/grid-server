@@ -1585,8 +1585,8 @@
         FROM
             public_ybjs.tb_score_day_pre
         WHERE
-            wfdatetime BETWEEN CAST(#{start} || '0000' AS BIGINT)
-            AND CAST(#{end} || '2359' AS BIGINT)
+            to_timestamp( wfdatetime || '', 'yyyymmddhh24mi' ) + ( wfhour - 24 || ' hour' ) :: INTERVAL BETWEEN to_timestamp( #{start} || '0000', 'yyyymmddhh24mi' )
+            AND to_timestamp( #{end} || '2359', 'yyyymmddhh24mi' )
             <if test="fTime != 'zh'">
                 AND substr( wfdatetime || '', 9, 2 ) = #{fTime}
             </if>

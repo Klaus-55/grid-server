@@ -1276,13 +1276,23 @@ public class MediumShortService {
         Date startDate = DateKit.parse(start);
         Date endDate = DateKit.parse(end);
         List<String> categories = new ArrayList<>();
+        int[] fHours = {72, 48, 24};
+        List<String> fTimes = new ArrayList<>();
+        if (Objects.equals(fTime, "zh")) {
+            fTimes.add("08");
+            fTimes.add("20");
+        } else {
+            fTimes.add(fTime);
+        }
         while (!startDate.after(endDate)) {
-            String dateTime = DateKit.format(startDate, "yyyyMMdd");
-            if (Objects.equals(fTime, "zh")) {
-                categories.add(dateTime + "08");
-                categories.add(dateTime + "20");
-            } else {
-                categories.add(dateTime + fTime);
+            for (String time : fTimes) {
+                int iTime = Integer.parseInt(time);
+                for (int fHour : fHours) {
+                    Date date = DateKit.addHour(startDate, iTime);
+                    date = DateKit.addHour(date, -fHour + 24);
+                    String dateTime = DateKit.format(date, "yyyyMMddHH");
+                    categories.add(String.format("%s(%s时)", dateTime, fHour));
+                }
             }
             startDate = DateKit.addHour(startDate, 24);
         }
