@@ -160,7 +160,7 @@ public class ExamineKit {
         int byfjCount = 0;
         double byfjValue = 0.0;
         for (int i = 4; i <= 6; i++) {
-            if (map.get("lj" + i + "_pc") != null) {
+            if (map.get("fj" + i + "_pc") != null) {
                 byfjCount++;
                 byfjValue += Double.parseDouble(map.get("fj" + i + "_pc").toString());
             }
