@@ -1432,6 +1432,33 @@ public class MediumShortService {
         return mediumShortMapper.getLiveGribData(ddatetime, facname, table);
     }
 
+    @DS("live")
+    public List<Map<String, Object>> getSnowFact(String start, String end) {
+        List<Map<String, Object>> list = mediumShortMapper.getSnowFact(start, end);
+        if (list.size() == 0) return list;
+        List<Map<String, Object>> rainList = mediumShortMapper.getRainFact(start, end);
+        for (Map<String, Object> map : list) {
+            String station_id_c = map.get("station_id_c").toString();
+            String datetime = map.get("datetime").toString();
+//            Map<String, Object> rainMap = rainList.stream().filter(item -> Objects.equals(station_id_c, item.get("station_id_c")) && Objects.equals(datetime, item.get("ddatetime"))).findAny().orElse(null);
+            String datetime1 = DateKit.format(DateKit.addHour(DateKit.parse(datetime), -2), "yyyy-MM-dd HH:mm");
+            Map<String, Object> rainMap1 = rainList.stream().filter(item -> Objects.equals(station_id_c, item.get("station_id_c")) && Objects.equals(datetime1, item.get("ddatetime"))).findAny().orElse(null);
+            String datetime2 = DateKit.format(DateKit.addHour(DateKit.parse(datetime), -1), "yyyy-MM-dd HH:mm");
+            Map<String, Object> rainMap2 = rainList.stream().filter(item -> Objects.equals(station_id_c, item.get("station_id_c")) && Objects.equals(datetime2, item.get("ddatetime"))).findAny().orElse(null);
+            String datetime3 = DateKit.format(DateKit.addHour(DateKit.parse(datetime), 1), "yyyy-MM-dd HH:mm");
+            Map<String, Object> rainMap3 = rainList.stream().filter(item -> Objects.equals(station_id_c, item.get("station_id_c")) && Objects.equals(datetime3, item.get("ddatetime"))).findAny().orElse(null);
+            String datetime4 = DateKit.format(DateKit.addHour(DateKit.parse(datetime), 2), "yyyy-MM-dd HH:mm");
+            Map<String, Object> rainMap4 = rainList.stream().filter(item -> Objects.equals(station_id_c, item.get("station_id_c")) && Objects.equals(datetime4, item.get("ddatetime"))).findAny().orElse(null);
+            map.put("pre_before_1", Objects.isNull(rainMap1) ? 0.0 : rainMap1.get("pre_1h"));
+            map.put("pre_before_2", Objects.isNull(rainMap2) ? 0.0 : rainMap2.get("pre_1h"));
+//            map.put("pre_before_3", Objects.isNull(rainMap) ? 0.0 : rainMap.get("pre_1h"));
+//            map.put("pre_after_1", Objects.isNull(rainMap) ? 0.0 : rainMap.get("pre_1h"));
+            map.put("pre_after_2", Objects.isNull(rainMap3) ? 0.0 : rainMap3.get("pre_1h"));
+            map.put("pre_after_3", Objects.isNull(rainMap4) ? 0.0 : rainMap4.get("pre_1h"));
+        }
+        return list;
+    }
+
     public void downloadWord(String fileName, HttpServletResponse response) {
         String wordPath = "E:\\湖南省智能网格\\02_project\\参考文档";
         String filePath = wordPath + File.separator + fileName;

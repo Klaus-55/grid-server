@@ -1835,4 +1835,169 @@
         limit 1
     </select>
 
+    <select id="getSnowFact" resultType="java.util.Map">
+
+        SELECT
+            t1.*,
+            obtname,
+            area,
+            district5,
+            to_char(t1.ddatetime, 'yyyy-mm-dd hh24:mi') datetime,
+            CASE WHEN wep_now::varchar = '10.0' THEN concat('轻雾','(',wep_now::integer,')')
+            WHEN wep_now::varchar = '22.0' THEN concat('观测前一小时内有毛毛雨','(',wep_now::integer,')')
+            WHEN wep_now::varchar = '24.0' THEN concat('观测前一小时内有雨夹雪','(',wep_now::integer,')')
+            WHEN wep_now::varchar = '50.0' THEN concat('间歇轻毛毛雨','(',wep_now::integer,')')
+            WHEN wep_now::varchar = '68.0' THEN concat('小雨夹雨','(',wep_now::integer,')')
+            WHEN wep_now::varchar = '70.0' THEN concat('间歇性小雪','(',wep_now::integer,')')
+            WHEN wep_now::varchar = '72.0' THEN concat('间歇性中雪','(',wep_now::integer,')')
+            WHEN wep_now::varchar = '74.0' THEN concat('间歇性大雪','(',wep_now::integer,')')
+            ELSE wep_now::integer::varchar END wep_now_zw,
+            CASE WHEN wep_past_1 = '3' THEN concat('吹雪沙暴', '(' ,wep_past_1, ')')
+            WHEN wep_past_1 = '4' THEN concat('大雾', '(' ,wep_past_1, ')')
+            WHEN wep_past_1 = '5' THEN concat('毛毛雨', '(' ,wep_past_1, ')')
+            WHEN wep_past_1 = '6' THEN concat('雨', '(' ,wep_past_1, ')')
+            WHEN wep_past_1 = '7' THEN concat('雪', '(' ,wep_past_1, ')')
+            WHEN wep_past_1 = '8' THEN concat('阵性降水', '(' ,wep_past_1, ')')
+            WHEN wep_past_1 = '9' THEN concat('雷暴', '(' ,wep_past_1, ')')
+            ELSE wep_past_1 END wep_past_1_zw,
+            CASE WHEN wep_past_2 = '3' THEN concat('吹雪沙暴', '(' ,wep_past_2, ')')
+            WHEN wep_past_2 = '4' THEN concat('大雾', '(' ,wep_past_2, ')')
+            WHEN wep_past_2 = '5' THEN concat('毛毛雨', '(' ,wep_past_2, ')')
+            WHEN wep_past_2 = '6' THEN concat('雨', '(' ,wep_past_2, ')')
+            WHEN wep_past_2 = '7' THEN concat('雪', '(' ,wep_past_2, ')')
+            WHEN wep_past_2 = '8' THEN concat('阵性降水', '(' ,wep_past_2, ')')
+            WHEN wep_past_2 = '9' THEN concat('雷暴', '(' ,wep_past_2, ')')
+            ELSE wep_past_2 END wep_past_2_zw
+        FROM
+        (
+        SELECT
+            t1.*,
+            t2.wep_past_1,
+            t2.wep_past_2
+        FROM
+        (
+        SELECT
+            t1.*,
+            t2.pre_after_3h
+        FROM
+        (
+        SELECT
+            station_id_c,
+            ddatetime,
+            pre_1h,
+            snow_depth,
+            wep_now,
+            SUM ( pre_before_3h ) pre_before_3h
+        FROM
+        (
+        SELECT
+            t1.station_id_c,
+            t1.ddatetime,
+            t1.pre_1h,
+            t1.snow_depth,
+            t1.wep_now,
+            t2.pre_1h pre_before_3h
+        FROM
+        (
+        SELECT
+            station_id_c,
+            ddatetime,
+            pre_1h,
+            snow_depth,
+            wep_now
+        FROM
+            tb_need_hours
+        WHERE
+            ddatetime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+            AND snow_depth &lt; 99999
+            AND snow_depth > 0
+        ) t1,
+        tb_need_hours t2
+        WHERE
+            t1.station_id_c = t2.station_id_c
+            AND t2.ddatetime >= t1.ddatetime + '-2 hour'
+            AND t2.ddatetime &lt;= t1.ddatetime
+            AND t2.pre_1h &lt; 99999
+        ) t1
+        GROUP BY
+            station_id_c,
+            ddatetime,
+            pre_1h,
+            snow_depth,
+            wep_now
+        ) t1,
+        (
+        SELECT
+            station_id_c,
+            ddatetime,
+            SUM ( pre_after_3h ) pre_after_3h
+        FROM
+        (
+        SELECT
+            t1.station_id_c,
+            t1.ddatetime,
+            t2.pre_1h pre_after_3h
+        FROM
+        (
+        SELECT
+            station_id_c,
+            ddatetime
+        FROM
+            tb_need_hours
+        WHERE
+            ddatetime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+            AND snow_depth &lt; 99999
+            AND snow_depth > 0
+        ) t1,
+        tb_need_hours t2
+        WHERE
+            t1.station_id_c = t2.station_id_c
+            AND t2.ddatetime >= t1.ddatetime
+            AND t2.ddatetime &lt;= t1.ddatetime + '2 hour'
+            AND t2.pre_1h &lt; 99999
+        ) t1
+        GROUP BY
+            station_id_c,
+            ddatetime
+        ) t2
+        WHERE
+            t1.ddatetime = t2.ddatetime
+            AND t1.station_id_c = t2.station_id_c
+        ) t1,
+        ( SELECT
+            station_id_c,
+            ddatetime,
+            wep_past_1,
+            wep_past_2
+          FROM
+            tb_cimiss_hours
+          WHERE
+            ddatetime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' )
+            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' )
+          ) t2
+        WHERE
+            t1.ddatetime = t2.ddatetime
+            AND t1.station_id_c = t2.station_id_c
+        ) t1,
+        tb_obt t2
+        WHERE
+            t1.station_id_c = t2.obtid
+    </select>
+
+    <select id="getRainFact" resultType="java.util.Map">
+        SELECT
+            station_id_c,
+            to_char( ddatetime, 'yyyy-mm-dd hh24:mi' ) ddatetime,
+            pre_1h
+        FROM
+            tb_need_hours
+        WHERE
+            ddatetime BETWEEN to_timestamp( #{start} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss' ) + '-3 hour'
+            AND to_timestamp( #{end} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss' ) + '1 hour'
+            AND substr( station_id_c, 1, 1 ) = '5'
+            AND pre_1h &lt; 999999
+    </select>
+
 </mapper>

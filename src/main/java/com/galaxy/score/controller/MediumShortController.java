@@ -338,6 +338,17 @@ public class MediumShortController {
         return Result.success(list);
     }
 
+    @ApiOperation("降雪实况")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "start", value = "开始时间", example = "2021-12-26"),
+            @ApiImplicitParam(name = "end", value = "结束时间", example = "2021-12-26")
+    })
+    @GetMapping("/getSnowFact/{start}/{end}")
+    public Result getSnowFact(@PathVariable String start, @PathVariable String end) {
+        List<Map<String, Object>> list = mediumShortService.getSnowFact(start, end);
+        return Result.success(list);
+    }
+
     @ApiOperation("评分文件下载")
     @GetMapping("/downloadWord")
     public void downloadWord(String fileName, HttpServletResponse response) {

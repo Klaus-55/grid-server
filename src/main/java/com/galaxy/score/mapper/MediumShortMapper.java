@@ -86,4 +86,8 @@ public interface MediumShortMapper extends BaseMapper {
 
     List<Map<String,Object>> getLiveGribData(@Param("ddatetime") String ddatetime, @Param("facname") String facname, @Param("table") String table);
 
+    List<Map<String, Object>> getSnowFact(@Param("start") String start, @Param("end") String end);
+
+    List<Map<String, Object>> getRainFact(@Param("start") String start, @Param("end") String end);
+
 }
